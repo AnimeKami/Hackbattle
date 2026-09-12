@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PLR Capture</title>
+<style>
+  body { font-family: sans-serif; text-align: center; background: #111; color: #eee; }
+  #flash { position: fixed; inset: 0; background: white; display: none; z-index: 999; }
+  video { border-radius: 8px; margin-top: 20px; }
+  button { padding: 10px 20px; font-size: 16px; margin-top: 20px; cursor: pointer; }
+  pre { text-align: left; max-width: 600px; margin: 20px auto; background: #222; padding: 10px; }
+</style>
+</head>
+<body>
+  <div id="flash"></div>
+  <h2>Pupillary Light Reflex — Capture</h2>
+  <p>Look at the camera. Click Start, keep your eye steady, the screen will flash white after 2 seconds.</p>
+  <video id="video" width="480" height="360" autoplay muted></video><br>
+  <button id="startBtn">Start 6-second test</button>
+  <pre id="output">Results will appear here.</pre>
+
+<script>
+const video = document.getElementById('video');
+const flashDiv = document.getElementById('flash');
+const output = document.getElementById('output');
+const startBtn = document.getElementById('startBtn');
+
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => { video.srcObject = stream; })
+  .catch(err => { output.textContent = 'Camera error: ' + err; });
+
+const canvas = document.createElement('canvas');
+canvas.width = 320;
+canvas.height = 240;
+const ctx = canvas.getContext('2d');
+
+function grabFrameBase64() {
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.6);
+}
+
+startBtn.addEventListener('click', async () => {
+  startBtn.disabled = true;
+  output.textContent = 'Recording...';
+  const frames = [];
+  const durationMs = 6000;
+  const flashAtMs = 2000;
+  const fps = 15;
+  const intervalMs = 1000 / fps;
+  const startTime = performance.now();
+  let flashFired = false;
+
+  const timer = setInterval(() => {
+    const now = performance.now() - startTime;
+    if (now >= flashAtMs && !flashFired) {
+      flashDiv.style.display = 'block';
+      flashFired = true;
+      setTimeout(() => { flashDiv.style.display = 'none'; }, 400);
+    }
+    frames.push({ t: now / 1000, image: grabFrameBase64() });
+    if (now >= durationMs) {
+      clearInterval(timer);
+      sendFrames(frames);
+    }
+  }, intervalMs);
+});
+
+async function sendFrames(frames) {
+  output.textContent = `Captured ${frames.length} frames. Sending to backend...`;
+  try {
+    const res = await fetch('http://localhost:5000/analyze_session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ flash_time: 2.0, frames })
+    });
+    const data = await res.json();
+    output.textContent = JSON.stringify(data.metrics, null, 2);
+  } catch (e) {
+    output.textContent = 'Error contacting backend: ' + e;
+  } finally {
+    startBtn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

@@ -16,7 +16,15 @@ and POST it here for analysis.
 > values**. A real deployment would need reference data collected from many
 > healthy volunteers, on the same hardware, to calibrate these properly.
 
----| Phone buzzes in a rhythmic pattern (e.g. 6 short pulses); person reacts to each buzz | Per-pulse reaction time, consistency across pulses, missed reactions, and overshoot |
+---
+
+## The three tests
+
+| Test | Protocol | What it measures |
+|---|---|---|
+| **Tremor** (`/api/tremor`) | Hold the phone as still as possible for ~10s | Resting/postural tremor amplitude and frequency band (e.g. 4–6Hz Parkinsonian-like, 4–12Hz essential-tremor-like) |
+| **Vibration Response** (`/api/vibration-response`) | Phone vibrates continuously; person tries to resist and hold it steady | How much residual movement gets through, and whether control gets *worse* over time (fatigue signal) |
+| **Reflex** (`/api/reflex`) | Phone buzzes in a rhythmic pattern (e.g. 6 short pulses); person reacts to each buzz | Per-pulse reaction time, consistency across pulses, missed reactions, and overshoot |
 
 All three share the same underlying signal-processing pipeline
 (`analysis/signal_utils.py`): detrend → bandpass filter (1–15Hz, tunable per
@@ -50,14 +58,6 @@ motor-health-backend/
 git clone <this-repo-url>
 cd motor-health-backend
 python3 -m venv venv
-
-## The three tests
-
-| Test | Protocol | What it measures |
-|---|---|---|
-| **Tremor** (`/api/tremor`) | Hold the phone as still as possible for ~10s | Resting/postural tremor amplitude and frequency band (e.g. 4–6Hz Parkinsonian-like, 4–12Hz essential-tremor-like) |
-| **Vibration Response** (`/api/vibration-response`) | Phone vibrates continuously; person tries to resist and hold it steady | How much residual movement gets through, and whether control gets *worse* over time (fatigue signal) |
-| **Reflex** (`/api/reflex`) 
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
@@ -184,7 +184,21 @@ shape above is respected. A typical frontend flow:
 
 ---
 
+## Known limitations (worth being upfront about, e.g. in a hackathon Q&A)
 
+- **Reference thresholds are placeholders.** They're grounded in general
+  published ranges, not device-calibrated clinical data.
+- **Reflex detection can produce false positives.** Residual motion from one
+  pulse's response can occasionally bleed into the next pulse's detection
+  window, registering an artificially short reaction time. A refractory
+  period (ignoring the first ~50ms of each window) would reduce this; not
+  yet implemented.
+- **No persistence layer.** Every request is stateless — there's no database,
+  user accounts, or history tracking. Trend-over-multiple-sessions analysis
+  (arguably more clinically meaningful than a single reading) would need this
+  added.
+- **iOS vibration limitation.** `navigator.vibrate()` isn't supported on iOS
+  Safari; any iOS frontend needs a native shell to trigger real vibration.
 
 ---
 

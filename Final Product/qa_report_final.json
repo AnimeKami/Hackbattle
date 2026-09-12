@@ -1,0 +1,661 @@
+{
+  "anisocoria_average_demo": {
+    "averaged_metrics": {
+      "baseline_diameter_px": 5.0,
+      "latency_sec": 0.0,
+      "min_diameter_px": 3.4,
+      "pct_constriction": 32.0
+    },
+    "bilateral_route_after_fix": {
+      "assessment": "Asymmetric baseline pupil sizes detected \u2014 repeat the test and seek clinical evaluation if this persists.",
+      "badge": "Pupil Asymmetry Flag \u26a0\ufe0f",
+      "finding": "baseline_asymmetry",
+      "left_eye_metrics": {
+        "baseline_diameter_px": 7.0,
+        "latency_sec": 0.0,
+        "min_diameter_px": 4.0,
+        "pct_constriction": 42.857142857142854
+      },
+      "right_eye_metrics": {
+        "baseline_diameter_px": 3.0,
+        "latency_sec": 0.0,
+        "min_diameter_px": 2.8,
+        "pct_constriction": 6.666666666666672
+      },
+      "status": "success"
+    },
+    "current_endpoint_route": {
+      "assessment": "Normal Pupillary Light Reflex detected \u2014 nice, brisk constriction!",
+      "badge": "Gold Star Reflex Detective \ud83c\udf1f",
+      "metrics": {
+        "baseline_diameter_px": 5.0,
+        "latency_sec": 0.0,
+        "min_diameter_px": 3.4,
+        "pct_constriction": 32.0
+      },
+      "status": "success"
+    },
+    "endpoint_has_separate_eye_fields": false,
+    "left_metrics": {
+      "baseline_diameter_px": 7.0,
+      "latency_sec": 0.0,
+      "min_diameter_px": 4.0,
+      "pct_constriction": 42.857142857142854
+    },
+    "randomized_runs": [
+      {
+        "averaged_metrics": {
+          "baseline_diameter_px": 4.822297260050955,
+          "latency_sec": 0.0,
+          "min_diameter_px": 3.1866745675877963,
+          "pct_constriction": 33.917915140011004
+        },
+        "bilateral_route": {
+          "assessment": "Asymmetric baseline pupil sizes detected \u2014 repeat the test and seek clinical evaluation if this persists.",
+          "badge": "Pupil Asymmetry Flag \u26a0\ufe0f",
+          "status": "success"
+        },
+        "left_metrics": {
+          "baseline_diameter_px": 6.732009031420574,
+          "latency_sec": 0.0,
+          "min_diameter_px": 3.7800676538563724,
+          "pct_constriction": 43.849337750239016
+        },
+        "real_image_endpoint": {
+          "status": "error",
+          "valid_frames": 0
+        },
+        "right_metrics": {
+          "baseline_diameter_px": 2.912585488681335,
+          "latency_sec": 0.0,
+          "min_diameter_px": 2.5932814813192206,
+          "pct_constriction": 10.962905933678819
+        },
+        "synthetic_eye_detected_diameters": [
+          53.36685562133789,
+          65.51355743408203
+        ]
+      },
+      {
+        "averaged_metrics": {
+          "baseline_diameter_px": 4.973424280223758,
+          "latency_sec": 0.0,
+          "min_diameter_px": 3.4662407833147855,
+          "pct_constriction": 30.304744015146902
+        },
+        "bilateral_route": {
+          "assessment": "Asymmetric baseline pupil sizes detected \u2014 repeat the test and seek clinical evaluation if this persists.",
+          "badge": "Pupil Asymmetry Flag \u26a0\ufe0f",
+          "status": "success"
+        },
+        "left_metrics": {
+          "baseline_diameter_px": 6.86755609236735,
+          "latency_sec": 0.0,
+          "min_diameter_px": 4.199938017843363,
+          "pct_constriction": 38.84377555341407
+        },
+        "real_image_endpoint": {
+          "status": "error",
+          "valid_frames": 0
+        },
+        "right_metrics": {
+          "baseline_diameter_px": 3.0792924680801654,
+          "latency_sec": 0.0,
+          "min_diameter_px": 2.732543548786208,
+          "pct_constriction": 11.260668575276434
+        },
+        "synthetic_eye_detected_diameters": [
+          55.317466735839844,
+          65.51355743408203
+        ]
+      },
+      {
+        "averaged_metrics": {
+          "baseline_diameter_px": 4.986734509032778,
+          "latency_sec": 0.0,
+          "min_diameter_px": 3.3596807898304513,
+          "pct_constriction": 32.627638713373344
+        },
+        "bilateral_route": {
+          "assessment": "Asymmetric baseline pupil sizes detected \u2014 repeat the test and seek clinical evaluation if this persists.",
+          "badge": "Pupil Asymmetry Flag \u26a0\ufe0f",
+          "status": "success"
+        },
+        "left_metrics": {
+          "baseline_diameter_px": 7.1239437253171785,
+          "latency_sec": 0.0,
+          "min_diameter_px": 4.08969404341635,
+          "pct_constriction": 42.592274713199465
+        },
+        "real_image_endpoint": {
+          "status": "error",
+          "valid_frames": 0
+        },
+        "right_metrics": {
+          "baseline_diameter_px": 2.849525292748377,
+          "latency_sec": 0.0,
+          "min_diameter_px": 2.6296675362445523,
+          "pct_constriction": 7.715592385276604
+        },
+        "synthetic_eye_detected_diameters": [
+          57.271484375,
+          65.51355743408203
+        ]
+      }
+    ],
+    "right_metrics": {
+      "baseline_diameter_px": 3.0,
+      "latency_sec": 0.0,
+      "min_diameter_px": 2.8,
+      "pct_constriction": 6.666666666666672
+    }
+  },
+  "delayed": [
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 6.615512864757746,
+        "latency_sec": 1.7999999999999998,
+        "min_diameter_px": 3.500916667788253,
+        "pct_constriction": 47.08019258131315
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Delayed pupillary constriction detected \u2014 repeat the test under consistent lighting and seek clinical evaluation if this persists.",
+        "badge": "Delayed Reflex Flag \u26a0\ufe0f",
+        "metrics": {
+          "baseline_diameter_px": 6.615512864757746,
+          "latency_sec": 1.7999999999999998,
+          "min_diameter_px": 3.500916667788253,
+          "pct_constriction": 47.08019258131315
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 29.12063980102539,
+      "target": {
+        "baseline": 6.631,
+        "latency": 1.874,
+        "minimum": 3.5
+      }
+    },
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 7.251335249251607,
+        "latency_sec": 2.0,
+        "min_diameter_px": 3.505610180125284,
+        "pct_constriction": 51.65565982503582
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Delayed pupillary constriction detected \u2014 repeat the test under consistent lighting and seek clinical evaluation if this persists.",
+        "badge": "Delayed Reflex Flag \u26a0\ufe0f",
+        "metrics": {
+          "baseline_diameter_px": 7.251335249251607,
+          "latency_sec": 2.0,
+          "min_diameter_px": 3.505610180125284,
+          "pct_constriction": 51.65565982503582
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 29.12063980102539,
+      "target": {
+        "baseline": 7.243,
+        "latency": 1.593,
+        "minimum": 3.5
+      }
+    },
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 6.715293912365722,
+        "latency_sec": 1.85,
+        "min_diameter_px": 3.3831502485027523,
+        "pct_constriction": 49.62022075797861
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Delayed pupillary constriction detected \u2014 repeat the test under consistent lighting and seek clinical evaluation if this persists.",
+        "badge": "Delayed Reflex Flag \u26a0\ufe0f",
+        "metrics": {
+          "baseline_diameter_px": 6.715293912365722,
+          "latency_sec": 1.85,
+          "min_diameter_px": 3.3831502485027523,
+          "pct_constriction": 49.62022075797861
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 29.12063980102539,
+      "target": {
+        "baseline": 6.745,
+        "latency": 1.901,
+        "minimum": 3.5
+      }
+    }
+  ],
+  "fixed_dilation": [
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 8.226871745043574,
+        "latency_sec": 2.3,
+        "min_diameter_px": 7.774134847409369,
+        "pct_constriction": 5.503147632111372
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Reduced pupillary constriction detected \u2014 repeat the test in a dimmer room and seek clinical evaluation if this persists.",
+        "badge": "Reduced Reflex Flag \u26a0\ufe0f",
+        "metrics": {
+          "baseline_diameter_px": 8.226871745043574,
+          "latency_sec": 2.3,
+          "min_diameter_px": 7.774134847409369,
+          "pct_constriction": 5.503147632111372
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 64.62217712402344,
+      "target": {
+        "baseline": 8.201,
+        "latency": 0.3,
+        "minimum": 8.159
+      }
+    },
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 7.890864213772753,
+        "latency_sec": 2.2,
+        "min_diameter_px": 7.563796162016731,
+        "pct_constriction": 4.144895196462209
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Little to no pupillary constriction detected \u2014 repeat the test; if confirmed, seek urgent clinical evaluation.",
+        "badge": "Absent Reflex Flag \u26a0\ufe0f",
+        "metrics": {
+          "baseline_diameter_px": 7.890864213772753,
+          "latency_sec": 2.2,
+          "min_diameter_px": 7.563796162016731,
+          "pct_constriction": 4.144895196462209
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 63.15081024169922,
+      "target": {
+        "baseline": 7.871,
+        "latency": 0.3,
+        "minimum": 7.789
+      }
+    },
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 7.866202416170572,
+        "latency_sec": 2.1500000000000004,
+        "min_diameter_px": 7.529544915393639,
+        "pct_constriction": 4.279797073170476
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Little to no pupillary constriction detected \u2014 repeat the test; if confirmed, seek urgent clinical evaluation.",
+        "badge": "Absent Reflex Flag \u26a0\ufe0f",
+        "metrics": {
+          "baseline_diameter_px": 7.866202416170572,
+          "latency_sec": 2.1500000000000004,
+          "min_diameter_px": 7.529544915393639,
+          "pct_constriction": 4.279797073170476
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 63.15081024169922,
+      "target": {
+        "baseline": 7.865,
+        "latency": 0.3,
+        "minimum": 7.879
+      }
+    }
+  ],
+  "healthy": [
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 6.6219705625487375,
+        "latency_sec": 0.75,
+        "min_diameter_px": 3.8418173955635986,
+        "pct_constriction": 41.983774176052556
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Normal Pupillary Light Reflex detected \u2014 nice, brisk constriction!",
+        "badge": "Gold Star Reflex Detective \ud83c\udf1f",
+        "metrics": {
+          "baseline_diameter_px": 6.6219705625487375,
+          "latency_sec": 0.75,
+          "min_diameter_px": 3.8418173955635986,
+          "pct_constriction": 41.983774176052556
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 32.985042572021484,
+      "target": {
+        "baseline": 6.632,
+        "latency": 0.286,
+        "minimum": 4.0
+      }
+    },
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 6.800561200036949,
+        "latency_sec": 0.2999999999999998,
+        "min_diameter_px": 3.8615724234926527,
+        "pct_constriction": 43.216856522492996
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Normal Pupillary Light Reflex detected \u2014 nice, brisk constriction!",
+        "badge": "Gold Star Reflex Detective \ud83c\udf1f",
+        "metrics": {
+          "baseline_diameter_px": 6.800561200036949,
+          "latency_sec": 0.2999999999999998,
+          "min_diameter_px": 3.8615724234926527,
+          "pct_constriction": 43.216856522492996
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 32.985042572021484,
+      "target": {
+        "baseline": 6.817,
+        "latency": 0.23,
+        "minimum": 4.0
+      }
+    },
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 6.878103405472282,
+        "latency_sec": 0.3500000000000001,
+        "min_diameter_px": 3.815880529829639,
+        "pct_constriction": 44.521326521586026
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Normal Pupillary Light Reflex detected \u2014 nice, brisk constriction!",
+        "badge": "Gold Star Reflex Detective \ud83c\udf1f",
+        "metrics": {
+          "baseline_diameter_px": 6.878103405472282,
+          "latency_sec": 0.3500000000000001,
+          "min_diameter_px": 3.815880529829639,
+          "pct_constriction": 44.521326521586026
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 32.985042572021484,
+      "target": {
+        "baseline": 6.885,
+        "latency": 0.297,
+        "minimum": 4.0
+      }
+    }
+  ],
+  "miosis": [
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 2.1271091879987134,
+        "latency_sec": 0.3999999999999999,
+        "min_diameter_px": 1.6194403245298379,
+        "pct_constriction": 23.86661043698066
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Normal Pupillary Light Reflex detected \u2014 nice, brisk constriction!",
+        "badge": "Gold Star Reflex Detective \ud83c\udf1f",
+        "metrics": {
+          "baseline_diameter_px": 2.1271091879987134,
+          "latency_sec": 0.3999999999999999,
+          "min_diameter_px": 1.6194403245298379,
+          "pct_constriction": 23.86661043698066
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 65.96988677978516,
+      "target": {
+        "baseline": 2.119,
+        "latency": 0.3,
+        "minimum": 1.638
+      }
+    },
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 2.027318518169731,
+        "latency_sec": 0.5499999999999998,
+        "min_diameter_px": 1.4232521537839418,
+        "pct_constriction": 29.796322530074946
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Normal Pupillary Light Reflex detected \u2014 nice, brisk constriction!",
+        "badge": "Gold Star Reflex Detective \ud83c\udf1f",
+        "metrics": {
+          "baseline_diameter_px": 2.027318518169731,
+          "latency_sec": 0.5499999999999998,
+          "min_diameter_px": 1.4232521537839418,
+          "pct_constriction": 29.796322530074946
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 65.96988677978516,
+      "target": {
+        "baseline": 2.029,
+        "latency": 0.3,
+        "minimum": 1.454
+      }
+    },
+    {
+      "direct_metrics": {
+        "baseline_diameter_px": 1.9601321629052015,
+        "latency_sec": 0.3999999999999999,
+        "min_diameter_px": 1.355298587195575,
+        "pct_constriction": 30.856775229542436
+      },
+      "real_image_endpoint": {
+        "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+        "status": "error",
+        "valid_frames": 0
+      },
+      "route": {
+        "assessment": "Normal Pupillary Light Reflex detected \u2014 nice, brisk constriction!",
+        "badge": "Gold Star Reflex Detective \ud83c\udf1f",
+        "metrics": {
+          "baseline_diameter_px": 1.9601321629052015,
+          "latency_sec": 0.3999999999999999,
+          "min_diameter_px": 1.355298587195575,
+          "pct_constriction": 30.856775229542436
+        },
+        "status": "success"
+      },
+      "synthetic_eye_detected_diameter": 65.96988677978516,
+      "target": {
+        "baseline": 1.971,
+        "latency": 0.3,
+        "minimum": 1.382
+      }
+    }
+  ],
+  "no_face_failure": {
+    "error": "Not enough valid pupil detections to score this session (0 pre-flash, 0 post-flash valid frames). Make sure your face and eyes are clearly visible and well lit, then try again.",
+    "status": "error"
+  },
+  "rapd_average_demo": {
+    "averaged_pct": 25.0,
+    "bilateral_route_after_fix": {
+      "assessment": "Asymmetric light response detected \u2014 repeat the test and seek clinical evaluation if this persists.",
+      "badge": "RAPD Screening Flag \u26a0\ufe0f",
+      "finding": "response_asymmetry",
+      "left_eye_metrics": {
+        "baseline_diameter_px": 7.0,
+        "latency_sec": 0.0,
+        "min_diameter_px": 3.8,
+        "pct_constriction": 45.714285714285715
+      },
+      "right_eye_metrics": {
+        "baseline_diameter_px": 7.0,
+        "latency_sec": 0.0,
+        "min_diameter_px": 6.5,
+        "pct_constriction": 7.142857142857143
+      },
+      "status": "success"
+    },
+    "current_endpoint_route": {
+      "assessment": "Normal Pupillary Light Reflex detected \u2014 nice, brisk constriction!",
+      "badge": "Gold Star Reflex Detective \ud83c\udf1f",
+      "metrics": {
+        "baseline_diameter_px": 5.0,
+        "latency_sec": 0.0,
+        "min_diameter_px": 3.4,
+        "pct_constriction": 32.0
+      },
+      "status": "success"
+    },
+    "endpoint_has_separate_eye_fields": false,
+    "normal_eye_pct": 45.0,
+    "randomized_runs": [
+      {
+        "averaged_metrics": {
+          "baseline_diameter_px": 6.88435226731177,
+          "latency_sec": 0.0,
+          "min_diameter_px": 5.145365591783956,
+          "pct_constriction": 25.259989727499235
+        },
+        "bilateral_route": {
+          "assessment": "Asymmetric light response detected \u2014 repeat the test and seek clinical evaluation if this persists.",
+          "badge": "RAPD Screening Flag \u26a0\ufe0f",
+          "status": "success"
+        },
+        "left_metrics": {
+          "baseline_diameter_px": 6.815168377982047,
+          "latency_sec": 0.0,
+          "min_diameter_px": 3.795105258000239,
+          "pct_constriction": 44.31384453741172
+        },
+        "real_image_endpoint": {
+          "status": "error",
+          "valid_frames": 0
+        },
+        "right_metrics": {
+          "baseline_diameter_px": 6.953536156641492,
+          "latency_sec": 0.0,
+          "min_diameter_px": 6.495625925567674,
+          "pct_constriction": 6.585285828081263
+        },
+        "synthetic_eye_detected_diameters": [
+          55.317466735839844,
+          55.317466735839844
+        ]
+      },
+      {
+        "averaged_metrics": {
+          "baseline_diameter_px": 7.141173593960655,
+          "latency_sec": 0.0,
+          "min_diameter_px": 5.479779252843045,
+          "pct_constriction": 23.26500426376225
+        },
+        "bilateral_route": {
+          "assessment": "Asymmetric light response detected \u2014 repeat the test and seek clinical evaluation if this persists.",
+          "badge": "RAPD Screening Flag \u26a0\ufe0f",
+          "status": "success"
+        },
+        "left_metrics": {
+          "baseline_diameter_px": 6.971913430471909,
+          "latency_sec": 0.0,
+          "min_diameter_px": 3.944661890986397,
+          "pct_constriction": 43.42067023171006
+        },
+        "real_image_endpoint": {
+          "status": "error",
+          "valid_frames": 0
+        },
+        "right_metrics": {
+          "baseline_diameter_px": 7.310433757449402,
+          "latency_sec": 0.0,
+          "min_diameter_px": 7.014896614699693,
+          "pct_constriction": 4.042675887030004
+        },
+        "synthetic_eye_detected_diameters": [
+          55.317466735839844,
+          59.39716720581055
+        ]
+      },
+      {
+        "averaged_metrics": {
+          "baseline_diameter_px": 6.967105313435345,
+          "latency_sec": 0.0,
+          "min_diameter_px": 4.890079132195984,
+          "pct_constriction": 29.811895870642722
+        },
+        "bilateral_route": {
+          "assessment": "Asymmetric light response detected \u2014 repeat the test and seek clinical evaluation if this persists.",
+          "badge": "RAPD Screening Flag \u26a0\ufe0f",
+          "status": "success"
+        },
+        "left_metrics": {
+          "baseline_diameter_px": 6.6311020643722465,
+          "latency_sec": 0.0,
+          "min_diameter_px": 3.3300354582029543,
+          "pct_constriction": 49.7815683445041
+        },
+        "real_image_endpoint": {
+          "status": "error",
+          "valid_frames": 0
+        },
+        "right_metrics": {
+          "baseline_diameter_px": 7.303108562498444,
+          "latency_sec": 0.0,
+          "min_diameter_px": 6.450122806189015,
+          "pct_constriction": 11.679762788814648
+        },
+        "synthetic_eye_detected_diameters": [
+          53.36685562133789,
+          59.39716720581055
+        ]
+      }
+    ],
+    "weak_eye_pct": 5.0
+  }
+}

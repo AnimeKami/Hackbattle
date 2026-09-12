@@ -66,10 +66,14 @@ def tremor_test():
     try:
         df, fs = _parse_samples_from_request()
         result = tremor.run(df, fs)
+        
+        if not isinstance(result, dict):
+            raise TypeError("Analysis module must return a dictionary.")
+            
         result["sampling_rate_hz"] = round(fs, 1)
         result["disclaimer"] = DISCLAIMER
         return jsonify(result)
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:  # unexpected processing error
         return jsonify({"error": f"Analysis failed: {e}"}), 500
@@ -80,10 +84,14 @@ def vibration_response_test():
     try:
         df, fs = _parse_samples_from_request()
         result = vibration_response.run(df, fs)
+        
+        if not isinstance(result, dict):
+            raise TypeError("Analysis module must return a dictionary.")
+            
         result["sampling_rate_hz"] = round(fs, 1)
         result["disclaimer"] = DISCLAIMER
         return jsonify(result)
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Analysis failed: {e}"}), 500
@@ -93,11 +101,20 @@ def vibration_response_test():
 def reflex_test():
     try:
         df, fs = _parse_samples_from_request()
+        
+        # Enforce the required fields for this specific test
+        if "pulse_index" not in df.columns or "pulse_active" not in df.columns:
+            raise ValueError("The reflex endpoint requires 'pulse_index' and 'pulse_active' fields in samples.")
+            
         result = reflex.run(df, fs)
+        
+        if not isinstance(result, dict):
+            raise TypeError("Analysis module must return a dictionary.")
+            
         result["sampling_rate_hz"] = round(fs, 1)
         result["disclaimer"] = DISCLAIMER
         return jsonify(result)
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Analysis failed: {e}"}), 500

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Health API Debugger</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .panel { border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        button { padding: 10px 15px; margin-right: 10px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        pre { background: #222; color: #0f0; padding: 15px; border-radius: 5px; overflow-x: auto; min-height: 200px; }
+        input { padding: 8px; width: 300px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <h1>Motor Health API Debugger</h1>
+    
+    <div class="panel">
+        <label for="apiUrl">Backend URL:</label><br>
+        <input type="text" id="apiUrl" value="http://127.0.0.1:5000">
+        <p><i>Note: Make sure your Flask app is running before testing.</i></p>
+
+        <button onclick="testHealth()">1. Test Healthcheck</button>
+        <button onclick="testTremor()">2. Test Tremor</button>
+        <button onclick="testVibration()">3. Test Vibration</button>
+        <button onclick="testReflex()">4. Test Reflex</button>
+    </div>
+
+    <h2>Server Response:</h2>
+    <pre id="output">Waiting for request...</pre>
+
+    <script>
+        // Helper to output text to the screen
+        function logOutput(text) {
+            document.getElementById('output').textContent = text;
+        }
+
+        // Generate fake sensor data (at least 10 samples required by the backend)
+        function generateMockSamples(isReflex = false) {
+            const samples = [];
+            for (let i = 0; i < 100; i++) {
+                const sample = {
+                    time: i * 0.02, // Simulate 50Hz sampling
+                    gyro_x: (Math.random() - 0.5) * 0.1,
+                    gyro_y: (Math.random() - 0.5) * 0.1,
+                    gyro_z: (Math.random() - 0.5) * 0.1
+                };
+                
+                // The reflex endpoint strictly requires these two fields
+                if (isReflex) {
+                    sample.pulse_index = Math.floor(i / 5);
+                    sample.pulse_active = (i % 5 < 3);
+                }
+                
+                samples.push(sample);
+            }
+            return { samples: samples };
+        }
+
+        // Generic function to send POST requests
+        async function sendPostRequest(endpoint, data) {
+            const baseUrl = document.getElementById('apiUrl').value;
+            logOutput(`Sending POST request to ${baseUrl}${endpoint}...\n\nPayload:\n${JSON.stringify(data, null, 2)}`);
+            
+            try {
+                const response = await fetch(`${baseUrl}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                logOutput(`Status: ${response.status} ${response.statusText}\n\nResponse:\n${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                logOutput(`Error: Could not connect to server.\n\nDetails: ${error.message}`);
+            }
+        }
+
+        // 1. GET /api/health
+        async function testHealth() {
+            const baseUrl = document.getElementById('apiUrl').value;
+            logOutput(`Sending GET request to ${baseUrl}/api/health...`);
+            try {
+                const response = await fetch(`${baseUrl}/api/health`);
+                const result = await response.json();
+                logOutput(`Status: ${response.status} ${response.statusText}\n\nResponse:\n${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                logOutput(`Error: Could not connect to server.\n\nDetails: ${error.message}`);
+            }
+        }
+
+        // 2. POST /api/tremor
+        function testTremor() {
+            const payload = generateMockSamples(false);
+            sendPostRequest('/api/tremor', payload);
+        }
+
+        // 3. POST /api/vibration-response
+        function testVibration() {
+            const payload = generateMockSamples(false);
+            sendPostRequest('/api/vibration-response', payload);
+        }
+
+        // 4. POST /api/reflex
+        function testReflex() {
+            const payload = generateMockSamples(true);
+            sendPostRequest('/api/reflex', payload);
+        }
+    </script>
+</body>
+</html>

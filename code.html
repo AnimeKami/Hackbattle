@@ -153,7 +153,7 @@
 <a aria-current="page" class="px-4 py-2 rounded-full transition-all bg-primary-container text-on-primary-container shadow-[0_3px_0px_rgba(0,70,101,0.25)] font-bold" data-path="eye-flash-test" href="#">Eye Flash Test</a>
 <a class="px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="reflex-reports" href="#">Reflex Reports</a>
 <a class="px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="eye-games-and-badges" href="#">Eye Games &amp; Badges</a>
-<a class="px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="parent-and-doctor-guide" href="#">Parent &amp; Doctor Guide</a>
+<a class="px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="parent-and-doctor-guide"<a href="#" onclick="event.preventDefault(); openModal('parentModal');">Parent &amp; Doctor Guide</a>
 </nav>
 <div class="flex items-center gap-space-sm shrink-0">
 <div class="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant shadow-[0_2px_0px_rgba(49,54,71,0.06)]">
@@ -616,7 +616,65 @@
 </div>
 </section>
 <!-- Interactive JavaScript Engine matching original functionality + fallback backend analysis -->
+ <!-- Doctor Guide Modal -->
+<div id="doctorModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-surface rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-outline/20">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold flex items-center gap-2">👨‍⚕️ Clinical Practitioner Guide</h3>
+      <button onclick="closeModal('doctorModal')" class="text-2xl font-bold hover:text-primary">&times;</button>
+    </div>
+    <hr class="border-outline/20 mb-4">
+    <div class="space-y-3 text-sm">
+      <p><strong>Pupillary Light Reflex (PLR) Assessment:</strong></p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li><strong>Baseline Diameter:</strong> Assesses resting autonomic tone under ambient lighting.</li>
+        <li><strong>Constriction Percentage:</strong> Evaluates parasympathetic path via Cranial Nerve III (Oculomotor). Normal reflex shows 10-30% constriction.</li>
+        <li><strong>Latency:</strong> Measures sensory input delay via Cranial Nerve II (Optic) to efferent response. Standard response onset occurs within 200–500 ms.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Parent Guide Modal -->
+<div id="parentModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-surface rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-outline/20">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold flex items-center gap-2">👪 Parent & Caregiver Guide</h3>
+      <button onclick="closeModal('parentModal')" class="text-2xl font-bold hover:text-primary">&times;</button>
+    </div>
+    <hr class="border-outline/20 mb-4">
+    <div class="space-y-3 text-sm">
+      <p><strong>What is this test doing?</strong></p>
+      <p>This quick check measures how your child's pupils naturally constrict in response to a subtle light flash stimulus.</p>
+      <p><strong>Testing Tips:</strong></p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Ensure steady indoor ambient lighting without direct screen glare.</li>
+        <li>Have your child look directly into the target reticle without rapid blinking.</li>
+        <li>This tool is designed for screening and monitoring—always consult a qualified clinician for diagnostic evaluations.</li>
+      </ul>
+    </div>
+  </div>
+</div>
 <script>
+  function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+// Close modal when clicking on the dark backdrop
+window.addEventListener('click', (e) => {
+  if (e.target.id === 'doctorModal') closeModal('doctorModal');
+  if (e.target.id === 'parentModal') closeModal('parentModal');
+});
         (function() {
           // DOM Elements
           const video = document.getElementById('video');

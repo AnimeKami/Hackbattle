@@ -15,30 +15,44 @@ Then open http://localhost:5000/demo in a browser to sanity check it.
 
 import base64
 import io
+import sys
+from pathlib import Path
 
 import cv2
 import numpy as np
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request
 
 import pupil_core
 
 app = Flask(__name__)
 
-# MediaPipe face mesh is loaded once, lazily -- it's a bit slow to init.
+# MediaPipe Face Landmarker is loaded once, lazily -- it's a bit slow to init.
 _face_mesh = None
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
 
 
 def get_face_mesh():
     global _face_mesh
     if _face_mesh is None:
         import mediapipe as mp
-        _face_mesh = mp.solutions.face_mesh.FaceMesh(
-            static_image_mode=False,
-            max_num_faces=1,
-            refine_landmarks=True,  # required -- this is what gives iris landmarks
-            min_detection_confidence=0.5,
+        model_path = Path(__file__).resolve().parent / "models" / "face_landmarker.task"
+        if not model_path.is_file():
+            raise FileNotFoundError(
+                f"MediaPipe Face Landmarker model not found: {model_path}"
+            )
+        options = mp.tasks.vision.FaceLandmarkerOptions(
+            base_options=mp.tasks.BaseOptions(model_asset_path=str(model_path)),
+            running_mode=mp.tasks.vision.RunningMode.IMAGE,
+            num_faces=1,
+            min_face_detection_confidence=0.5,
+            min_face_presence_confidence=0.5,
             min_tracking_confidence=0.5,
         )
+        _face_mesh = mp.tasks.vision.FaceLandmarker.create_from_options(options)
     return _face_mesh
 
 
@@ -86,6 +100,12 @@ def analyze_session():
         diameters.append(diameter)
 
     metrics = pupil_core.compute_plr_metrics(timestamps, diameters, flash_time)
+
+    valid_count = sum(1 for d in diameters if d is not None)
+    pre_valid = sum(1 for t, d in zip(timestamps, diameters) if t < flash_time and d is not None)
+    post_valid = sum(1 for t, d in zip(timestamps, diameters) if t >= flash_time and d is not None)
+    print(f"[PLR DIAG] Session complete: {valid_count}/{len(diameters)} frames with valid measurements (pre-flash: {pre_valid}, post-flash: {post_valid})", file=sys.stderr, flush=True)
+    print(f"[PLR DIAG] Calculated metrics: {metrics}", file=sys.stderr, flush=True)
 
     return jsonify({
         "timestamps": timestamps,

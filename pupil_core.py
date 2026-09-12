@@ -11,6 +11,7 @@ actual pupil (the darkest, most circular blob), which is what actually
 shrinks/grows when light hits the eye.
 """
 
+import sys
 import cv2
 import numpy as np
 
@@ -61,33 +62,198 @@ def find_pupil_diameter(eye_roi_gray, min_radius_frac=0.05, max_radius_frac=0.5)
     return best
 
 
-def eye_bounding_box(landmarks, indices, img_w, img_h, pad=6):
+def eye_bounding_box(landmarks, indices, img_w, img_h, pad=4):
+    """Compute clamped bounding box for given landmark indices."""
     xs = [landmarks[i].x * img_w for i in indices]
     ys = [landmarks[i].y * img_h for i in indices]
     x1, x2 = int(min(xs)) - pad, int(max(xs)) + pad
     y1, y2 = int(min(ys)) - pad, int(max(ys)) + pad
-    return max(x1, 0), max(y1, 0), x2, y2
+    return max(x1, 0), max(y1, 0), min(x2, img_w), min(y2, img_h)
 
 
-# MediaPipe FaceMesh eye-contour landmark indices (with refine_landmarks=True)
+# MediaPipe FaceMesh landmark indices:
+# Left eye (subject's right eye, camera left):
 LEFT_EYE = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246]
+LEFT_IRIS_CENTER = 468
+LEFT_IRIS_BORDER = [469, 470, 471, 472]
+
+# Right eye (subject's left eye, camera right):
 RIGHT_EYE = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398]
+RIGHT_IRIS_CENTER = 473
+RIGHT_IRIS_BORDER = [474, 475, 476, 477]
+
+
+def _detect_pupil_in_eye(frame_bgr, landmarks, center_idx, border_indices, contour_indices, img_w, img_h, eye_name="Eye"):
+    """
+    Detect pupil in a single eye using MediaPipe iris landmarks to isolate
+    the iris region, then applying OpenCV Otsu/percentile thresholding and contour
+    analysis to find the pupil circle.
+    """
+    cx = landmarks[center_idx].x * img_w
+    cy = landmarks[center_idx].y * img_h
+    if not (0 <= cx < img_w and 0 <= cy < img_h):
+        return None, 0.0
+
+    # Calculate iris radius from border landmarks
+    radii = [np.hypot((landmarks[b].x * img_w - cx), (landmarks[b].y * img_h - cy)) for b in border_indices]
+    iris_r = float(np.mean(radii))
+    if iris_r < 1.0:
+        return None, 0.0
+
+    # Check for blink: vertical distance between eyelids
+    ys = [landmarks[i].y * img_h for i in contour_indices]
+    eye_height = max(ys) - min(ys)
+    if eye_height < max(2.5, iris_r * 0.4):
+        # Eyelids closed or blinking
+        return None, 0.0
+
+    # Crop around the iris center with appropriate margin
+    pad = int(np.ceil(iris_r * 1.4))
+    x1 = max(0, int(cx - pad))
+    y1 = max(0, int(cy - pad))
+    x2 = min(img_w, int(cx + pad + 1))
+    y2 = min(img_h, int(cy + pad + 1))
+
+    if (x2 - x1) < 4 or (y2 - y1) < 4:
+        return None, 0.0
+
+    crop = frame_bgr[y1:y2, x1:x2]
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (3, 3), 0)
+
+    local_cx = cx - x1
+    local_cy = cy - y1
+
+    # Circular mask representing the iris boundary
+    mask = np.zeros(gray.shape, dtype=np.uint8)
+    cv2.circle(mask, (int(round(local_cx)), int(round(local_cy))), int(round(iris_r)), 255, -1)
+
+    iris_pixels = blurred[mask == 255]
+    if len(iris_pixels) < 6:
+        return None, 0.0
+
+    # Adaptive thresholding:
+    # Use Otsu on iris pixels, but if Otsu threshold exceeds median iris brightness
+    # (common when pupil is small or constricted), fall back to midpoint of lower intensity range
+    val_otsu, _ = cv2.threshold(iris_pixels, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    p_med = float(np.median(iris_pixels))
+    p_min = float(np.percentile(iris_pixels, 5))
+    th = val_otsu if val_otsu < p_med else (p_min + p_med) / 2.0
+
+    _, thresh = cv2.threshold(blurred, int(th), 255, cv2.THRESH_BINARY_INV)
+    pupil_mask = cv2.bitwise_and(thresh, mask)
+
+    # Fill specular corneal reflection holes
+    cnts_holes, _ = cv2.findContours(pupil_mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    if cnts_holes:
+        cv2.drawContours(pupil_mask, cnts_holes, -1, 255, -1)
+
+    # Find candidate pupil contours
+    contours, _ = cv2.findContours(pupil_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None, 0.0
+
+    best_d = None
+    best_score = -1.0
+
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area < 1.0:
+            continue
+        (pcx, pcy), r = cv2.minEnclosingCircle(c)
+        # Biological bounds: pupil must be smaller than iris, and reasonable minimum size
+        if r < 0.5 or r > iris_r * 0.92:
+            continue
+        perim = cv2.arcLength(c, True)
+        circ = (4.0 * np.pi * area / (perim * perim)) if perim > 0 else 0
+        dist = np.hypot(pcx - local_cx, pcy - local_cy) / (iris_r + 1e-5)
+        if dist > 0.75:
+            continue
+        score = circ - 0.4 * dist
+        if score > best_score:
+            best_score = score
+            best_d = float(r * 2.0)
+
+    return best_d, best_score
 
 
 def analyze_frame_bgr(frame_bgr, face_mesh):
-    """Run MediaPipe on one BGR frame, return pupil diameter (px) for the right eye, or None."""
+    """
+    Run MediaPipe on one BGR frame and return the detected pupil diameter (px), or None.
+    Handles both MediaPipe Tasks FaceLandmarker and legacy FaceMesh solutions.
+    Tolerates blinking, head pose, lighting changes, and uses both eyes when available.
+    """
+    if frame_bgr is None or frame_bgr.size == 0:
+        return None
+
     h, w = frame_bgr.shape[:2]
     rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-    results = face_mesh.process(rgb)
-    if not results.multi_face_landmarks:
+
+    if hasattr(face_mesh, "process"):
+        results = face_mesh.process(rgb)
+        if not results or not results.multi_face_landmarks:
+            print("[PLR DIAG] Frame: No face detected (FaceMesh)", file=sys.stderr, flush=True)
+            return None
+        landmarks = results.multi_face_landmarks[0].landmark
+    else:
+        import mediapipe as mp
+        image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+        results = face_mesh.detect(image)
+        if not results or not results.face_landmarks or len(results.face_landmarks) == 0:
+            print("[PLR DIAG] Frame: No face detected (FaceLandmarker)", file=sys.stderr, flush=True)
+            return None
+        landmarks = results.face_landmarks[0]
+
+    num_landmarks = len(landmarks)
+    if num_landmarks < 468:
+        print(f"[PLR DIAG] Frame: Incomplete landmarks ({num_landmarks})", file=sys.stderr, flush=True)
         return None
-    landmarks = results.multi_face_landmarks[0].landmark
-    x1, y1, x2, y2 = eye_bounding_box(landmarks, RIGHT_EYE, w, h)
-    roi = frame_bgr[y1:y2, x1:x2]
-    if roi.size == 0:
-        return None
-    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-    return find_pupil_diameter(gray)
+
+    # Check if iris landmarks are available (model with 478 landmarks)
+    has_iris = num_landmarks >= 478
+
+    if has_iris:
+        d_left, score_left = _detect_pupil_in_eye(
+            frame_bgr, landmarks, LEFT_IRIS_CENTER, LEFT_IRIS_BORDER, LEFT_EYE, w, h, eye_name="Left"
+        )
+        d_right, score_right = _detect_pupil_in_eye(
+            frame_bgr, landmarks, RIGHT_IRIS_CENTER, RIGHT_IRIS_BORDER, RIGHT_EYE, w, h, eye_name="Right"
+        )
+
+        if d_left is not None and d_right is not None:
+            # Both eyes detected: check consistency
+            rel_diff = abs(d_left - d_right) / max(d_left, d_right)
+            if rel_diff <= 0.40:
+                d_final = (d_left + d_right) / 2.0
+            else:
+                d_final = d_left if score_left >= score_right else d_right
+            print(f"[PLR DIAG] Face detected ({num_landmarks} lms): Left={d_left:.2f}px, Right={d_right:.2f}px -> Combined={d_final:.2f}px", file=sys.stderr, flush=True)
+            return float(d_final)
+        elif d_left is not None:
+            print(f"[PLR DIAG] Face detected ({num_landmarks} lms): Left={d_left:.2f}px, Right eye failed -> Used Left={d_left:.2f}px", file=sys.stderr, flush=True)
+            return float(d_left)
+        elif d_right is not None:
+            print(f"[PLR DIAG] Face detected ({num_landmarks} lms): Right={d_right:.2f}px, Left eye failed -> Used Right={d_right:.2f}px", file=sys.stderr, flush=True)
+            return float(d_right)
+        else:
+            print(f"[PLR DIAG] Face detected ({num_landmarks} lms): Both eyes failed contour/blink checks", file=sys.stderr, flush=True)
+            return None
+    else:
+        # Fallback for 468-mesh without iris landmarks: use eye contour bounding boxes
+        x1_r, y1_r, x2_r, y2_r = eye_bounding_box(landmarks, RIGHT_EYE, w, h)
+        roi_r = frame_bgr[y1_r:y2_r, x1_r:x2_r]
+        d_r = find_pupil_diameter(cv2.cvtColor(roi_r, cv2.COLOR_BGR2GRAY)) if roi_r.size > 0 else None
+
+        x1_l, y1_l, x2_l, y2_l = eye_bounding_box(landmarks, LEFT_EYE, w, h)
+        roi_l = frame_bgr[y1_l:y2_l, x1_l:x2_l]
+        d_l = find_pupil_diameter(cv2.cvtColor(roi_l, cv2.COLOR_BGR2GRAY)) if roi_l.size > 0 else None
+
+        if d_l is not None and d_r is not None:
+            d_final = (d_left + d_right) / 2.0
+        else:
+            d_final = d_l if d_l is not None else d_r
+        print(f"[PLR DIAG] Fallback 468 lms: Left={d_l}, Right={d_r} -> {d_final}", file=sys.stderr, flush=True)
+        return float(d_final) if d_final is not None else None
 
 
 def compute_plr_metrics(timestamps, diameters, flash_time):
@@ -106,17 +272,30 @@ def compute_plr_metrics(timestamps, diameters, flash_time):
     if pre_mask.sum() < 2 or post_mask.sum() < 2:
         return {"error": "not enough data before/after flash"}
 
-    baseline = np.nanmedian(d[pre_mask])
+    pre_d = d[pre_mask]
     post_d = d[post_mask]
     post_t = ts[post_mask]
 
-    min_idx = np.nanargmin(post_d)
-    min_diameter = post_d[min_idx]
-    latency = post_t[min_idx] - flash_time
+    # Require enough real valid pupil measurements before and after flash
+    if np.isfinite(pre_d).sum() < 2 or np.isfinite(post_d).sum() < 2:
+        return {"error": "not enough valid pupil measurements"}
+
+    baseline = float(np.nanmedian(pre_d))
+
+    valid_post_mask = np.isfinite(post_d) & (post_d > 0.5)
+    if valid_post_mask.sum() < 2:
+        return {"error": "not enough valid pupil measurements"}
+
+    valid_post_d = post_d[valid_post_mask]
+    valid_post_t = post_t[valid_post_mask]
+
+    min_idx = int(np.argmin(valid_post_d))
+    min_diameter = float(valid_post_d[min_idx])
+    latency = float(valid_post_t[min_idx] - flash_time)
 
     pct_constriction = 0.0
-    if baseline and not np.isnan(baseline) and baseline > 0:
-        pct_constriction = 100.0 * (baseline - min_diameter) / baseline
+    if baseline > 0:
+        pct_constriction = float(100.0 * (baseline - min_diameter) / baseline)
 
     return {
         "baseline_diameter_px": float(baseline),

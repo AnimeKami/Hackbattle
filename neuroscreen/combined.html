@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NeuroScreen — Combined Results</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; background: #070c17; color: #e2e8f0; }
+    main { max-width: 900px; margin: auto; padding: 32px 18px 56px; }
+    .panel { background: #0e1628; border: 1px solid rgba(56,189,248,.25); border-radius: 16px; padding: 20px; margin-top: 18px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+    .label { color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    .finding { color: #67e8f9; font-size: 22px; font-weight: 700; margin: 8px 0; overflow-wrap: anywhere; }
+    .assessment { color: #cbd5e1; line-height: 1.5; min-height: 48px; }
+    .meta { color: #64748b; font: 12px monospace; }
+    a, button { color: #67e8f9; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .actions a, .actions button { background: #0b2235; border: 1px solid rgba(56,189,248,.35); border-radius: 10px; padding: 10px 14px; text-decoration: none; cursor: pointer; }
+    .empty { color: #fbbf24; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="label">NeuroVision Screen / Shared Session</div>
+    <h1>Combined Screening Results</h1>
+    <p>Results below are the latest motor and pupil analyses saved in this browser. They are screening signals, not diagnoses.</p>
+    <div class="grid">
+      <section class="panel" aria-labelledby="motorTitle">
+        <div class="label" id="motorTitle">Motor / Gyroscope</div>
+        <div class="finding" id="motorFinding">No motor result yet</div>
+        <div class="assessment" id="motorAssessment">Run the motor screening to add its result.</div>
+        <div class="meta" id="motorMeta"></div>
+      </section>
+      <section class="panel" aria-labelledby="pupilTitle">
+        <div class="label" id="pupilTitle">Pupil / PLR</div>
+        <div class="finding" id="pupilFinding">No pupil result yet</div>
+        <div class="assessment" id="pupilAssessment">Run the pupil screening to add its result.</div>
+        <div class="meta" id="pupilMeta"></div>
+      </section>
+    </div>
+    <div class="panel" id="sessionState">Run either test; the other result will remain visible when available.</div>
+    <div class="actions">
+      <a href="/motor/">Run Motor Screening</a>
+      <a href="/pupil/">Run Pupil Screening</a>
+      <a href="/">Back to Hub</a>
+      <button type="button" id="clearResults">Clear Shared Results</button>
+    </div>
+  </main>
+  <script>
+    (() => {
+      const key = 'neuroscreen.latestResults';
+      const get = () => {
+        try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch (_) { return {}; }
+      };
+      const setText = (id, value) => { document.getElementById(id).textContent = value; };
+      const render = () => {
+        const data = get();
+        for (const module of ['motor', 'pupil']) {
+          const result = data[module];
+          if (!result) continue;
+          setText(module + 'Finding', result.finding || 'No finding returned');
+          setText(module + 'Assessment', result.assessment || (result.reasons || []).join(' ') || 'Analysis completed.');
+          setText(module + 'Meta', `${result.status || 'success'} • session ${result.session_id || 'unknown'} • ${result.saved_at || 'time unavailable'}`);
+        }
+        const available = ['motor', 'pupil'].filter(module => data[module]);
+        const sameSession = available.length === 2 && data.motor.session_id && data.motor.session_id === data.pupil.session_id;
+        setText('sessionState', sameSession
+          ? `Both modality results are present for shared session ${data.session_id || data.motor.session_id}.`
+          : available.length === 2
+            ? 'Motor and pupil results exist, but they do not share a session. Clear results before testing the same user again.'
+          : `Waiting for ${available.includes('motor') ? 'pupil' : available.includes('pupil') ? 'motor' : 'motor and pupil'} result.`);
+      };
+      document.getElementById('clearResults').addEventListener('click', () => {
+        localStorage.removeItem(key);
+        window.location.reload();
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

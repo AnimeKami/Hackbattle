@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>NeuroScreen Suite - Diagnostic Hub</title>
+<!-- Tailwind CSS v3 CDN with forms and container queries plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#060a12',
+              navy: '#0b1120',
+              slate: '#111b2e',
+              border: 'rgba(56, 189, 248, 0.18)',
+              cyan: '#38bdf8',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+            }
+          },
+          fontFamily: {
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+            sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          boxShadow: {
+            'glow-cyan': '0 0 25px -4px rgba(56, 189, 248, 0.45)',
+            'glow-cyan-btn': '0 0 20px 2px rgba(56, 189, 248, 0.55)',
+            'glow-emerald-btn': '0 0 20px 2px rgba(16, 185, 129, 0.55)',
+            'hud-panel': 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.05), 0 12px 32px -4px rgba(0, 0, 0, 0.6)',
+          }
+        }
+      }
+    }
+  </script>
+<!-- Background grid and micro-patterns -->
+<style data-purpose="background-texture">
+    body {
+      background-color: #070c17;
+      background-image: 
+        radial-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px),
+        radial-gradient(rgba(15, 23, 42, 0.9) 1px, #070c17 1px);
+      background-size: 24px 24px, 100% 100%;
+      background-position: 0 0, 0 0;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+<!-- Animation keyframes for radar scan and subtle pulse effects -->
+<style data-purpose="hud-animations">
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 0.9; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.98); }
+    }
+    @keyframes radar-sweep {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes wave-flow {
+      0% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: 80; }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2.5s infinite ease-in-out;
+    }
+    .animate-radar-sweep {
+      animation: radar-sweep 12s linear infinite;
+      transform-origin: center center;
+    }
+    .wave-line {
+      stroke-dasharray: 6 4;
+      animation: wave-flow 4s linear infinite;
+    }
+    .wave-line-rev {
+      stroke-dasharray: 8 5;
+      animation: wave-flow 5s linear reverse infinite;
+    }
+  </style>
+</head>
+<body class="text-slate-200 font-sans p-4 pb-12 max-w-md mx-auto selection:bg-cyan-500 selection:text-slate-900">
+<!-- BEGIN: GlobalHeader -->
+<header class="mb-5" data-purpose="app-header">
+<div class="rounded-2xl border border-sky-500/25 bg-[#0e1628]/90 p-4 shadow-hud-panel backdrop-blur-md">
+<div class="flex items-center justify-between gap-3">
+<!-- Title and Synapse/Flask Medical Icon -->
+<div class="flex items-center gap-3">
+<div class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-400/40 bg-sky-950/50 shadow-[0_0_15px_rgba(56,189,248,0.25)]">
+<svg class="h-6 w-6 text-cyan-400" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"></path>
+<path d="M8.5 2h7"></path>
+<path d="M7 16h10"></path>
+</svg>
+<span class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-cyan-400"></span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h1 class="text-lg font-bold tracking-tight text-white">NeuroScreen</h1>
+<span class="rounded border border-cyan-500/40 bg-sky-950/70 px-1.5 py-0.5 text-[10px] font-mono font-medium text-cyan-300">Suite v1.0</span>
+</div>
+<p class="text-xs text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+<span class="inline-block h-1.5 w-1.5 rounded-full bg-cyan-400"></span>
+              Neurological Biomarker Suite
+            </p>
+</div>
+</div>
+<!-- Telemetry Status Badges -->
+<div class="text-right">
+<div class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/50 px-2.5 py-1 text-[10px] font-mono text-emerald-300">
+<span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+<span>API: Connected</span>
+</div>
+<div class="text-[9px] font-mono text-slate-400 mt-1">
+            &gt; bridge → <span class="text-slate-300">analysis.engine</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: GlobalHeader -->
+<!-- BEGIN: TelemetryChipBar -->
+<section class="mb-5 overflow-x-auto no-scrollbar" data-purpose="system-readiness-chips">
+<div class="flex gap-2 text-[11px] font-mono tracking-tight whitespace-nowrap">
+<div class="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-900/80 px-3 py-1.5 text-slate-300">
+<span class="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+<span>Kinematic IMU <span class="text-cyan-400">[100Hz]</span></span>
+</div>
+<div class="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-900/80 px-3 py-1.5 text-slate-300">
+<span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+<span>TrueDepth Optic <span class="text-emerald-400">[60 FPS]</span></span>
+</div>
+<div class="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 px-2.5 py-1.5 text-slate-400">
+<svg class="h-3 w-3 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect>
+<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+</svg>
+<span>HIPAA SECURE</span>
+</div>
+</div>
+</section>
+<!-- END: TelemetryChipBar -->
+<!-- BEGIN: MainContent -->
+<main class="space-y-6" data-purpose="diagnostic-modules">
+<!-- BEGIN: Module1MotorKinematics -->
+<section class="rounded-3xl border border-sky-500/30 bg-[#0d1527]/90 p-5 shadow-hud-panel relative overflow-hidden backdrop-blur-md" data-purpose="module-kinematics">
+<!-- Ambient corner glow -->
+<div class="absolute -top-16 -right-16 w-36 h-36 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+<!-- Card Top Bar Header -->
+<div class="flex items-center justify-between border-b border-slate-800/80 pb-3.5 mb-4">
+<div class="flex items-center gap-2">
+<span class="rounded bg-sky-950/90 border border-sky-500/40 px-2 py-0.5 text-xs font-mono font-semibold text-cyan-300">01</span>
+<span class="text-xs font-mono uppercase tracking-wider font-semibold text-slate-200">MOTOR KINEMATICS</span>
+</div>
+<span class="rounded-full border border-sky-500/30 bg-sky-950/40 px-2.5 py-0.5 text-[10px] font-mono text-cyan-300">
+          ● INERTIAL 3-AXIS
+        </span>
+</div>
+<!-- Interactive Sensor HUD Reticle Representation -->
+<div class="relative flex flex-col items-center justify-center my-3 py-4">
+<!-- Circular HUD grid reticle -->
+<div class="relative w-56 h-56 flex items-center justify-center">
+<!-- Concentric Outer Rings with Tech Dash -->
+<div class="absolute inset-0 rounded-full border border-slate-800 border-dashed"></div>
+<div class="absolute inset-3 rounded-full border border-sky-500/20"></div>
+<div class="absolute inset-8 rounded-full border border-sky-500/30 border-t-cyan-400 border-b-transparent animate-radar-sweep opacity-70"></div>
+<!-- Axis telemetry badges positioned over reticle -->
+<span class="absolute top-2 left-0 text-[10px] font-mono bg-slate-900/90 border border-sky-500/30 text-cyan-300 px-2 py-0.5 rounded shadow">
+            ● TR-X [3.8 Hz]
+          </span>
+<span class="absolute top-2 right-0 text-[10px] font-mono bg-slate-900/90 border border-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded shadow">
+            ● TR-Y [5.1 Hz]
+          </span>
+<span class="absolute bottom-6 left-1 text-[9px] font-mono text-cyan-400/80 bg-slate-950/70 px-1.5 py-0.5 rounded border border-slate-800">
+            AXIS: X/Y/Z
+          </span>
+<span class="absolute bottom-6 right-1 text-[9px] font-mono text-cyan-400/80 bg-slate-950/70 px-1.5 py-0.5 rounded border border-slate-800">
+            GYRO: STABLE
+          </span>
+<!-- Waveform SVG Overlay matching reference image kinematics -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none opacity-80" fill="none" viewbox="0 0 220 220">
+<path class="wave-line" d="M 25 110 C 60 70, 80 150, 110 110 C 140 70, 160 145, 195 110" stroke="#38bdf8" stroke-linecap="round" stroke-width="1.6"></path>
+<path class="wave-line-rev" d="M 25 125 C 65 155, 95 85, 120 120 C 150 155, 175 75, 195 125" stroke="#10b981" stroke-linecap="round" stroke-width="1.3"></path>
+</svg>
+<!-- Central Target Bracket Frame with Smartphone Silhouette -->
+<div class="relative z-10 w-24 h-36 border border-cyan-400/40 rounded-2xl bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-between p-2 shadow-[0_0_20px_rgba(56,189,248,0.2)]">
+<!-- Reticle corner notches -->
+<div class="w-full flex justify-between">
+<span class="w-2 h-2 border-t-2 border-l-2 border-cyan-300"></span>
+<span class="w-2 h-2 border-t-2 border-r-2 border-cyan-300"></span>
+</div>
+<!-- Center IMU vibration sensor indicators -->
+<div class="text-center my-auto">
+<div class="flex items-center justify-center gap-1.5 mb-1.5">
+<span class="h-2 w-2 rounded-full bg-cyan-400 animate-ping"></span>
+<span class="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]"></span>
+</div>
+<p class="text-[10px] font-mono text-cyan-200 tracking-wider font-bold">100Hz</p>
+<p class="text-[8px] font-mono text-slate-400 uppercase">DSP Online</p>
+</div>
+<!-- Home indicator bar -->
+<div class="w-full flex flex-col items-center gap-1">
+<div class="w-6 h-1 rounded-full bg-slate-700"></div>
+<div class="w-full flex justify-between">
+<span class="w-2 h-2 border-b-2 border-l-2 border-cyan-300"></span>
+<span class="w-2 h-2 border-b-2 border-r-2 border-cyan-300"></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Filter Frequency Ribbon -->
+<div class="mt-1">
+<span class="inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-slate-950/80 px-3 py-1 text-[10px] font-mono text-slate-300">
+<span class="h-1.5 w-1.5 rounded-full bg-cyan-400"></span>
+<span>DSP: BANDPASS 1-15Hz</span>
+<span class="text-slate-500">|</span>
+<span class="text-emerald-400">RMS LIVE</span>
+</span>
+</div>
+</div>
+<!-- Title & Diagnostic Scope -->
+<div class="mt-3">
+<h2 class="text-base font-semibold text-white tracking-tight">Motor &amp; Tremor Screening</h2>
+<p class="text-xs text-slate-400 mt-1 leading-relaxed">
+          Assess 3D kinematic stability, resting tremors, and postural resistance using device inertial sensors.
+        </p>
+</div>
+<!-- Protocol Feature Badges -->
+<div class="flex flex-wrap gap-1.5 my-3.5">
+<span class="rounded-md border border-slate-700/80 bg-slate-900/60 px-2 py-1 text-[10px] font-mono text-slate-300">
+          Postural Tremor
+        </span>
+<span class="rounded-md border border-slate-700/80 bg-slate-900/60 px-2 py-1 text-[10px] font-mono text-slate-300">
+          Vibration Resistance
+        </span>
+<span class="rounded-md border border-slate-700/80 bg-slate-900/60 px-2 py-1 text-[10px] font-mono text-slate-300">
+          Reflex Timing
+        </span>
+</div>
+<!-- Action Button -->
+<button class="w-full relative group overflow-hidden rounded-xl bg-gradient-to-r from-sky-400 via-cyan-400 to-sky-300 py-3.5 px-4 font-bold text-slate-950 shadow-glow-cyan-btn transition-all duration-200 active:scale-[0.98] hover:brightness-105 flex items-center justify-center gap-2" id="btn-motor">
+<svg class="h-4 w-4 fill-current text-slate-950" viewbox="0 0 24 24">
+<polygon points="5 3 19 12 5 21 5 3"></polygon>
+</svg>
+<span class="text-xs font-mono font-extrabold uppercase tracking-wider">Launch Motor Suite</span>
+</button>
+</section>
+<!-- END: Module1MotorKinematics -->
+<!-- BEGIN: Module2OculomotorOptics -->
+<section class="rounded-3xl border border-emerald-500/30 bg-[#0c1622]/90 p-5 shadow-hud-panel relative overflow-hidden backdrop-blur-md" data-purpose="module-oculomotor">
+<!-- Ambient corner glow -->
+<div class="absolute -top-16 -right-16 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+<!-- Card Top Bar Header -->
+<div class="flex items-center justify-between border-b border-slate-800/80 pb-3.5 mb-4">
+<div class="flex items-center gap-2">
+<span class="rounded bg-emerald-950/90 border border-emerald-500/40 px-2 py-0.5 text-xs font-mono font-semibold text-emerald-300">02</span>
+<span class="text-xs font-mono uppercase tracking-wider font-semibold text-slate-200">OCULOMOTOR OPTICS</span>
+</div>
+<span class="rounded-full border border-emerald-500/30 bg-emerald-950/40 px-2.5 py-0.5 text-[10px] font-mono text-emerald-300">
+          ● FRONT CAM AI
+        </span>
+</div>
+<!-- Visual HUD Reticle: Biometric Iris & Eye Target -->
+<div class="relative flex flex-col items-center justify-center my-3 py-4">
+<div class="relative w-56 h-56 flex items-center justify-center">
+<!-- Concentric Scanning Circles -->
+<div class="absolute inset-0 rounded-full border border-slate-800"></div>
+<div class="absolute inset-4 rounded-full border border-emerald-500/20 border-dashed animate-radar-sweep"></div>
+<div class="absolute inset-10 rounded-full border border-emerald-500/30"></div>
+<!-- Crosshairs -->
+<div class="absolute w-full h-[1px] bg-emerald-500/20"></div>
+<div class="absolute h-full w-[1px] bg-emerald-500/20"></div>
+<!-- Telemetry data tags positioned over reticle -->
+<span class="absolute top-2 left-0 text-[10px] font-mono bg-slate-900/90 border border-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded shadow">
+            ● PUPIL: 4.2mm
+          </span>
+<span class="absolute top-2 right-0 text-[10px] font-mono bg-slate-900/90 border border-cyan-500/30 text-cyan-300 px-2 py-0.5 rounded shadow">
+            ● FPS: 60 [SYNC]
+          </span>
+<span class="absolute bottom-6 left-1 text-[9px] font-mono text-emerald-400/80 bg-slate-950/70 px-1.5 py-0.5 rounded border border-slate-800">
+            GAZE: CALIBRATED
+          </span>
+<span class="absolute bottom-6 right-1 text-[9px] font-mono text-emerald-400/80 bg-slate-950/70 px-1.5 py-0.5 rounded border border-slate-800">
+            LATENCY: 12ms
+          </span>
+<!-- Digital Eye & Iris Aperture Reticle Center -->
+<div class="relative z-10 w-28 h-28 rounded-full border border-emerald-400/40 bg-slate-950/80 flex items-center justify-center shadow-[0_0_25px_rgba(16,185,129,0.2)]">
+<!-- Outer pupil ring -->
+<div class="w-20 h-20 rounded-full border border-emerald-400/50 border-dashed animate-spin" style="animation-duration: 20s;"></div>
+<!-- Inner Pupil Core -->
+<div class="absolute w-11 h-11 rounded-full bg-emerald-950/80 border border-emerald-400 flex items-center justify-center shadow-[inset_0_0_10px_#10b981]">
+<div class="w-4 h-4 rounded-full bg-emerald-300 animate-pulse-subtle"></div>
+</div>
+<!-- Reticle corner frame pins -->
+<div class="absolute -top-1 -left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-emerald-400"></div>
+<div class="absolute -top-1 -right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-emerald-400"></div>
+<div class="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-emerald-400"></div>
+<div class="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-emerald-400"></div>
+</div>
+</div>
+<!-- Metric pill under reticle -->
+<div class="mt-1">
+<span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-slate-950/80 px-3 py-1 text-[10px] font-mono text-slate-300">
+<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+<span>NEURAL GAZE: LOCKED</span>
+<span class="text-slate-500">|</span>
+<span class="text-cyan-400">0.02° JITTER</span>
+</span>
+</div>
+</div>
+<!-- Title & Diagnostic Scope -->
+<div class="mt-3">
+<h2 class="text-base font-semibold text-white tracking-tight">Optical &amp; Pupillary Screening</h2>
+<p class="text-xs text-slate-400 mt-1 leading-relaxed">
+          Assess pupillary light reflex, gaze tracking, and nystagmus velocity using the front TrueDepth optic sensor.
+        </p>
+</div>
+<!-- Feature Badges -->
+<div class="flex flex-wrap gap-1.5 my-3.5">
+<span class="rounded-md border border-slate-700/80 bg-slate-900/60 px-2 py-1 text-[10px] font-mono text-slate-300">
+          Pupillary Light Reflex
+        </span>
+<span class="rounded-md border border-slate-700/80 bg-slate-900/60 px-2 py-1 text-[10px] font-mono text-slate-300">
+          Saccadic Latency
+        </span>
+<span class="rounded-md border border-slate-700/80 bg-slate-900/60 px-2 py-1 text-[10px] font-mono text-slate-300">
+          Nystagmus Detection
+        </span>
+</div>
+<!-- Action Button -->
+<button class="w-full relative group overflow-hidden rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-300 py-3.5 px-4 font-bold text-slate-950 shadow-glow-emerald-btn transition-all duration-200 active:scale-[0.98] hover:brightness-105 flex items-center justify-center gap-2" id="btn-optic">
+<svg class="h-4 w-4 fill-current text-slate-950" viewbox="0 0 24 24">
+<polygon points="5 3 19 12 5 21 5 3"></polygon>
+</svg>
+<span class="text-xs font-mono font-extrabold uppercase tracking-wider">Launch Optical Suite</span>
+</button>
+<a class="mt-3 block w-full rounded-xl border border-cyan-500/30 bg-slate-950/60 py-2.5 text-center text-[11px] font-mono font-semibold text-cyan-300 transition hover:border-cyan-400/60 hover:text-cyan-200" href="/combined/">
+  View Combined Results →
+</a>
+</section>
+<!-- END: Module2OculomotorOptics -->
+<!-- BEGIN: RecentAssessmentsSection -->
+<section class="rounded-2xl border border-slate-800 bg-[#0d1527]/80 p-4 shadow-hud-panel" data-purpose="recent-assessments-panel">
+<div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2.5">
+<div class="flex items-center gap-2">
+<svg class="h-3.5 w-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+</svg>
+<h3 class="text-xs font-mono uppercase font-bold text-slate-300 tracking-wider">Recent Assessments</h3>
+</div>
+<span class="rounded border border-slate-700 bg-slate-900/90 px-2 py-0.5 text-[10px] font-mono text-slate-400">LAST 24 HRS</span>
+</div>
+<!-- Assessment Result List -->
+<div class="space-y-2.5">
+<!-- Item 1: Postural Tremor Test -->
+<div class="flex items-center justify-between p-3 rounded-xl border border-slate-800/90 bg-slate-950/60 hover:border-slate-700 transition">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-semibold text-white">Postural Tremor Test</span>
+<span class="inline-flex items-center gap-1 rounded bg-emerald-950/70 border border-emerald-500/40 px-1.5 py-0.5 text-[9px] font-mono text-emerald-300">
+<svg class="w-2.5 h-2.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24">
+<polyline points="20 6 9 17 4 12"></polyline>
+</svg>
+                Normal Baseline
+              </span>
+</div>
+<p class="text-[10px] font-mono text-slate-400 mt-1">Dominant 5.0 Hz • RMS 0.27 • 10m ago</p>
+</div>
+<svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<polyline points="9 18 15 12 9 6"></polyline>
+</svg>
+</div>
+<!-- Item 2: Pupillary Light Reflex -->
+<div class="flex items-center justify-between p-3 rounded-xl border border-slate-800/90 bg-slate-950/60 hover:border-slate-700 transition">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-semibold text-white">Pupillary Light Reflex</span>
+<span class="inline-flex items-center gap-1 rounded bg-amber-950/70 border border-amber-500/40 px-1.5 py-0.5 text-[9px] font-mono text-amber-300">
+<span class="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                Pending Review
+              </span>
+</div>
+<p class="text-[10px] font-mono text-slate-400 mt-1">Constriction Velocity 4.8mm/s • 1h ago</p>
+</div>
+<svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<polyline points="9 18 15 12 9 6"></polyline>
+</svg>
+</div>
+</div>
+<!-- Action Link -->
+<a class="mt-3 block text-center text-[11px] font-mono text-cyan-400 hover:text-cyan-300 hover:underline py-1" href="#history">
+        View Diagnostic History →
+      </a>
+</section>
+<!-- END: RecentAssessmentsSection -->
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: ComplianceFooter -->
+<footer class="mt-8 text-center" data-purpose="compliance-footer">
+<p class="text-[10px] font-mono text-slate-500 tracking-tight flex items-center justify-center gap-1.5">
+<svg class="w-3 h-3 text-cyan-500/70 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect>
+<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+</svg>
+<span>On-Device Sensor Processing • HIPAA Compliant • REST API v1.0</span>
+</p>
+</footer>
+<!-- END: ComplianceFooter -->
+<!-- Event Handlers Script -->
+<script data-purpose="event-handlers">
+    document.addEventListener('DOMContentLoaded', () => {
+      const motorBtn = document.getElementById('btn-motor');
+      const opticBtn = document.getElementById('btn-optic');
+
+      if (motorBtn) {
+        motorBtn.addEventListener('click', () => {
+          motorBtn.classList.add('scale-95');
+          setTimeout(() => {
+            motorBtn.classList.remove('scale-95');
+            window.location.href = '/motor/';
+          }, 150);
+        });
+      }
+
+      if (opticBtn) {
+        opticBtn.addEventListener('click', () => {
+          opticBtn.classList.add('scale-95');
+          setTimeout(() => {
+            opticBtn.classList.remove('scale-95');
+            window.location.href = '/pupil/';
+          }, 150);
+        });
+      }
+    });
+  </script>
+</body></html>

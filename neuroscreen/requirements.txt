@@ -1,0 +1,8 @@
+flask
+flask-cors
+pandas
+numpy
+scipy
+opencv-python
+mediapipe
+matplotlib

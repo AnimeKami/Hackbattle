@@ -184,21 +184,7 @@ shape above is respected. A typical frontend flow:
 
 ---
 
-## Known limitations (worth being upfront about, e.g. in a hackathon Q&A)
 
-- **Reference thresholds are placeholders.** They're grounded in general
-  published ranges, not device-calibrated clinical data.
-- **Reflex detection can produce false positives.** Residual motion from one
-  pulse's response can occasionally bleed into the next pulse's detection
-  window, registering an artificially short reaction time. A refractory
-  period (ignoring the first ~50ms of each window) would reduce this; not
-  yet implemented.
-- **No persistence layer.** Every request is stateless — there's no database,
-  user accounts, or history tracking. Trend-over-multiple-sessions analysis
-  (arguably more clinically meaningful than a single reading) would need this
-  added.
-- **iOS vibration limitation.** `navigator.vibrate()` isn't supported on iOS
-  Safari; any iOS frontend needs a native shell to trigger real vibration.
 
 ---
 

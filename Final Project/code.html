@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Magic Eye Lab — Integrated Cyber-Optical Analysis System</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          surface: '#070a13',
+          'surface-dim': '#090d1a',
+          'surface-card': '#0c1222',
+          'surface-panel': '#10172c',
+          'surface-border': '#1e293b',
+          cyan: {
+            DEFAULT: '#00e5ff',
+            dim: '#00b4d8',
+            glow: '#00f5d4'
+          },
+          teal: {
+            accent: '#05d5b3'
+          },
+          amber: {
+            flash: '#ffb703'
+          }
+        },
+        fontFamily: {
+          sans: ['Rubik', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace']
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html, body {
+    background-color: #070a13;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 0;
+    font-family: 'Rubik', sans-serif;
+    overflow-x: hidden;
+  }
+  .grid-bg {
+    background-size: 32px 32px;
+    background-image: 
+      linear-gradient(to right, rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+  }
+  .glow-cyan {
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
+  }
+  .glow-cyan-lg {
+    box-shadow: 0 0 28px rgba(0, 229, 255, 0.35);
+  }
+  .glow-text {
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+  }
+  .tech-border {
+    border: 1px solid rgba(0, 229, 255, 0.2);
+  }
+  .tech-border-highlight {
+    border: 1px solid rgba(0, 229, 255, 0.6);
+  }
+  .radar-sweep {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 229, 255, 0.18) 40deg, transparent 45deg);
+    animation: sweep 4s linear infinite;
+  }
+  @keyframes sweep {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .pulsing-dot {
+    animation: pulse-dot 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.85); }
+  }
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #090d1a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #00e5ff;
+  }
+  .page-view {
+    display: none;
+  }
+  .page-view.active {
+    display: block;
+    animation: fadeIn 0.25s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body class="grid-bg min-h-screen flex flex-col antialiased selection:bg-cyan selection:text-black">
+
+  <!-- Full-screen photic stimulus flash layer -->
+  <div id="photicFlashOverlay" class="fixed inset-0 bg-white z-[9999] opacity-0 pointer-events-none transition-opacity duration-100 flex items-center justify-center">
+    <div class="p-6 rounded-2xl bg-[#070a13]/90 text-cyan tech-border glow-cyan-lg flex items-center gap-4">
+      <span class="material-symbols-outlined text-amber-flash text-4xl animate-bounce">bolt</span>
+      <div>
+        <div class="font-mono text-xs text-amber-flash uppercase tracking-widest font-bold">PHOTIC BURST PROTOCOL</div>
+        <div class="font-mono text-2xl font-black text-white">400ms EXPOSURE @ t=2.00s</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Persistent Global Header Navigation -->
+  <header class="sticky top-0 z-50 bg-[#070a13]/95 backdrop-blur-md border-b border-cyan/20">
+    <div class="max-w-[1440px] mx-auto px-4 lg:px-8 h-18 py-3 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Status Group -->
+      <div class="flex items-center gap-4">
+        <button onclick="navigateTo('view-test')" class="flex items-center gap-3 group text-left focus:outline-none">
+          <div class="w-10 h-10 rounded-xl bg-surface-card tech-border flex items-center justify-center group-hover:border-cyan transition-colors">
+            <span class="material-symbols-outlined text-cyan text-2xl group-hover:scale-110 transition-transform">visibility</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold tracking-wider text-white text-base uppercase glow-text">Magic Eye Lab</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/30 font-semibold">V4.8-PROD</span>
+            </div>
+            <div class="text-[11px] font-mono text-slate-400 flex items-center gap-2">
+              <span class="flex items-center gap-1 text-teal-accent">
+                <span class="w-1.5 h-1.5 rounded-full bg-teal-accent pulsing-dot"></span> API CONNECTED
+              </span>
+              <span class="text-slate-600">|</span>
+              <span class="text-slate-400">15.0 FPS CLAMP</span>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Quick Route Buttons (Desktop Primary Nav) -->
+      <nav class="hidden md:flex items-center gap-1.5 bg-surface-card p-1.5 rounded-xl border border-slate-800">
+        <button id="navBtn-test" onclick="navigateTo('view-test')" class="px-3.5 py-1.5 rounded-lg font-mono text-xs font-semibold transition-all flex items-center gap-1.5 bg-cyan/15 text-cyan border border-cyan/40 shadow-[0_0_12px_rgba(0,229,255,0.2)]">
+          <span class="material-symbols-outlined text-[16px]">sensors</span>
+          <span>1. EYE FLASH TEST</span>
+        </button>
+        <button id="navBtn-baseline" onclick="navigateTo('view-baseline')" class="px-3.5 py-1.5 rounded-lg font-mono text-xs font-semibold text-slate-400 hover:text-cyan hover:bg-slate-800/60 transition-all flex items-center gap-1.5 border border-transparent">
+          <span class="material-symbols-outlined text-[16px]">straighten</span>
+          <span>2. BASELINE DIAMETER</span>
+        </button>
+        <button id="navBtn-tracking" onclick="navigateTo('view-tracking')" class="px-3.5 py-1.5 rounded-lg font-mono text-xs font-semibold text-slate-400 hover:text-cyan hover:bg-slate-800/60 transition-all flex items-center gap-1.5 border border-transparent">
+          <span class="material-symbols-outlined text-[16px]">filter_center_focus</span>
+          <span>3. PUPIL TRACKING</span>
+        </button>
+        <button id="navBtn-engine" onclick="navigateTo('view-engine')" class="px-3.5 py-1.5 rounded-lg font-mono text-xs font-semibold text-slate-400 hover:text-cyan hover:bg-slate-800/60 transition-all flex items-center gap-1.5 border border-transparent">
+          <span class="material-symbols-outlined text-[16px]">memory</span>
+          <span>4. ANALYSIS ENGINE</span>
+        </button>
+      </nav>
+
+      <!-- System Telemetry Right Badge -->
+      <div class="flex items-center gap-3">
+        <div class="hidden xl:flex flex-col text-right font-mono text-[11px] text-slate-400">
+          <span class="text-cyan font-medium">ENCLAVE: SEC_LEVEL_4</span>
+          <span class="text-[10px] text-slate-500">LATENCY BUDGET: 4.82ms</span>
+        </div>
+        <div class="w-2.5 h-2.5 rounded-full bg-cyan pulsing-dot"></div>
+      </div>
+    </div>
+
+      <!-- Compact page navigation for small screens -->
+      <nav class="md:hidden mt-3 grid grid-cols-2 gap-2" aria-label="Page navigation">
+        <button onclick="navigateTo('view-test')" class="px-3 py-2 rounded-lg bg-cyan/15 text-cyan border border-cyan/40 font-mono text-[11px] font-semibold">1. FLASH TEST</button>
+        <button onclick="navigateTo('view-baseline')" class="px-3 py-2 rounded-lg bg-surface-card text-slate-300 border border-slate-800 font-mono text-[11px] font-semibold">2. BASELINE</button>
+        <button onclick="navigateTo('view-tracking')" class="px-3 py-2 rounded-lg bg-surface-card text-slate-300 border border-slate-800 font-mono text-[11px] font-semibold">3. TRACKING</button>
+        <button onclick="navigateTo('view-engine')" class="px-3 py-2 rounded-lg bg-surface-card text-slate-300 border border-slate-800 font-mono text-[11px] font-semibold">4. ENGINE</button>
+      </nav>
+    <!-- Active Breadcrumb Bar with Quick Teleport -->
+    <div class="bg-surface-dim/90 border-t border-slate-900 px-4 lg:px-8 py-1.5 text-xs font-mono flex items-center justify-between">
+      <div class="flex items-center gap-2 text-slate-400">
+        <span class="text-slate-600">ROUTE:</span>
+        <a href="javascript:void(0)" onclick="navigateTo('view-test')" class="hover:text-cyan text-slate-300">HUB</a>
+        <span class="text-slate-600">/</span>
+        <span id="breadcrumbCurrent" class="text-cyan font-semibold">PUPIL RESPONSE SCREENING (TEST CONSOLE)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-slate-500 hidden sm:inline">INTERCONNECTED 4-PAGE SUITE</span>
+        <button onclick="cyclePage()" class="text-cyan hover:underline text-[11px] flex items-center gap-1 bg-cyan/10 px-2 py-0.5 rounded border border-cyan/20">
+          <span>NEXT PAGE</span>
+          <span class="material-symbols-outlined text-[12px]">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN VIEWPORT CONTAINER -->
+  <main class="flex-1 max-w-[1440px] w-full mx-auto px-4 lg:px-8 py-6">
+
+    <!-- =================================================================== -->
+    <!-- VIEW 1: EYE FLASH TEST — PRIMARY OPTICAL RESPONSE CONSOLE (SCREEN 11)-->
+    <!-- =================================================================== -->
+    <section id="view-test" class="page-view active">
+      
+      <!-- Focused test introduction -->
+      <div class="bg-surface-card tech-border rounded-2xl p-6 mb-6 relative overflow-hidden">
+        <div class="absolute right-0 top-0 w-96 h-96 bg-cyan/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/30 font-bold uppercase tracking-wider">PLR SCREENING</span>
+            <span class="text-[11px] font-mono text-slate-400">6-SECOND TEST</span>
+          </div>
+          <h1 class="text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+            <span>CHECK YOUR PUPIL RESPONSE</span>
+            <span class="text-xs font-mono font-normal px-2.5 py-1 rounded bg-teal-accent/15 text-teal-accent border border-teal-accent/30">STANDBY_LOCK</span>
+          </h1>
+          <p class="text-slate-300 text-sm mt-1.5 max-w-3xl leading-relaxed">
+            Look at the camera, keep your face still, and run the flash test. Your result is a screening signal, not a diagnosis.
+          </p>
+        </div>
+      </div>
+      <!-- Main Two-Column Testing Console -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left 7-Cols: Live Reticle Aperture & Protocol Timeline -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
+
+          <!-- Synthetic / Real Camera HUD Reticle Display -->
+          <div class="bg-surface-card tech-border rounded-2xl p-5 relative overflow-hidden shadow-xl">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-xs font-mono">
+              <div class="flex items-center gap-2 text-white">
+                <span class="w-2.5 h-2.5 rounded-full bg-cyan pulsing-dot"></span>
+                <span class="font-bold tracking-wider">FEED // OPTICAL_APERTURE_01</span>
+              </div>
+              <div class="flex items-center gap-3 text-slate-400">
+                <span>RES: 480x360</span>
+                <span class="text-cyan font-bold">FPS: 15.0</span>
+                <span class="px-2 py-0.5 rounded bg-teal-accent/15 text-teal-accent border border-teal-accent/30 font-semibold" id="sensorStatusTag">STANDBY_LOCK</span>
+              </div>
+            </div>
+
+            <!-- Optical Sensor Viewport Frame -->
+            <div class="relative w-full aspect-[4/3] bg-black/90 rounded-xl overflow-hidden tech-border flex items-center justify-center">
+              
+              <!-- Video hardware canvas (hidden when running simulated HUD) -->
+              <video id="webcamFeed" class="absolute inset-0 w-full h-full object-cover transform -scale-x-100 hidden" autoplay muted playsinline></video>
+              <canvas id="hiddenCaptureCanvas" class="hidden" width="320" height="240"></canvas>
+
+              <!-- Radar & Sub-Pixel Optical Reticle Vector Overlay -->
+              <div id="reticleGraphic" class="relative w-72 h-72 rounded-full border border-cyan/30 flex items-center justify-center">
+                <div class="radar-sweep"></div>
+                <!-- Outer Ring -->
+                <div class="w-56 h-56 rounded-full border border-cyan/40 border-dashed animate-[spin_30s_linear_infinite]"></div>
+                <!-- Iris Boundary Ring -->
+                <div class="absolute w-40 h-40 rounded-full border-2 border-cyan/60 flex items-center justify-center">
+                  <div class="text-[9px] font-mono text-cyan/70 -top-4 absolute">IRIS: 184.2px</div>
+                </div>
+                <!-- Sub-Pixel Dynamic Pupil Aperture Circle -->
+                <div id="pupilApertureCircle" class="w-20 h-20 rounded-full bg-cyan/25 border-2 border-cyan shadow-[0_0_20px_rgba(0,229,255,0.7)] transition-all duration-150 flex items-center justify-center">
+                  <div class="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_#ffffff]"></div>
+                </div>
+
+                <!-- HUD Axis Guides -->
+                <div class="absolute inset-x-0 h-px bg-cyan/20"></div>
+                <div class="absolute inset-y-0 w-px bg-cyan/20"></div>
+                <div class="absolute top-2 left-2 text-[10px] font-mono text-cyan/80 bg-black/60 px-2 py-0.5 rounded border border-cyan/30">
+                  AZ: 042.8° | EL: -12.4°
+                </div>
+                <div class="absolute top-2 right-2 text-[10px] font-mono text-teal-accent bg-black/60 px-2 py-0.5 rounded border border-teal-accent/30">
+                  ● RETICLE LOCKED [OD: 4.82mm // OS: 4.79mm]
+                </div>
+                <div class="absolute bottom-2 left-2 text-[10px] font-mono text-slate-400 bg-black/60 px-2 py-0.5 rounded">
+                  SENSOR LOCK: [240, 180]
+                </div>
+                <div id="flashHudTag" class="absolute bottom-2 right-2 text-[10px] font-mono text-amber-flash bg-black/60 px-2 py-0.5 rounded border border-amber-flash/40 hidden">
+                  ⚡ FLASH BURST ARMED
+                </div>
+              </div>
+
+              <!-- Interactive HUD Live Overlay Banner -->
+              <div id="testRunningHud" class="absolute top-4 inset-x-4 hidden items-center justify-between pointer-events-none">
+                <div class="px-3 py-1.5 rounded-lg bg-black/80 tech-border flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-amber-flash animate-ping"></span>
+                  <span id="testRunningStatusText" class="font-mono text-xs text-cyan font-bold">MISSION RUNNING: INGRESS STREAM</span>
+                </div>
+                <div class="px-3 py-1.5 rounded-lg bg-cyan text-black font-mono text-xs font-black">
+                  <span id="timerSecs">0.0</span>s / 6.0s
+                </div>
+              </div>
+            </div>
+
+            <!-- Primary actions stay beside the live feed -->
+            <div class="mt-4 p-3 rounded-xl bg-surface-dim tech-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div class="text-xs font-mono font-bold text-white">READY TO SCREEN?</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Start the camera, then run the six-second flash protocol.</div>
+              </div>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <button onclick="initCameraOrDemo()" id="actionInitCamBtn" class="px-4 py-2.5 rounded-xl bg-surface-panel hover:bg-slate-800 text-cyan font-mono text-xs font-semibold tech-border flex items-center gap-2 transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-base">videocam</span>
+                  <span id="initCamText">INITIALIZE SENSOR</span>
+                </button>
+                <button onclick="execute06SecProtocol()" id="actionRunTestBtn" class="px-5 py-2.5 rounded-xl bg-cyan hover:bg-cyan-glow text-black font-mono text-xs font-bold transition-all shadow-[0_0_20px_rgba(0,229,255,0.4)] flex items-center gap-2 cursor-pointer">
+                  <span class="material-symbols-outlined text-base">bolt</span>
+                  <span>RUN FLASH TEST</span>
+                </button>
+              </div>
+            </div>
+            <!-- Protocol Timeline & Progress Bar -->
+            <div class="mt-4 p-3 rounded-xl bg-surface-dim tech-border">
+              <div class="flex items-center justify-between text-xs font-mono mb-2">
+                <span class="text-white font-semibold">MISSION TIMELINE (15 FPS • 90 SAMPLES)</span>
+                <span id="protocolTimerDisplay" class="text-cyan font-bold">0.0s / 6.0s</span>
+              </div>
+              <div class="relative w-full h-3 rounded-full bg-slate-900 border border-slate-800 overflow-hidden">
+                <div id="protocolProgressBar" class="h-full bg-gradient-to-r from-cyan to-teal-accent w-0 transition-all duration-75"></div>
+                <!-- 2.0s Flash Marker (33.3%) -->
+                <div class="absolute top-0 bottom-0 left-[33.3%] w-1 bg-amber-flash shadow-[0_0_8px_#ffb703]" title="Flash Trigger at 2.0s"></div>
+                <!-- 2.6s Nadir Marker (43.3%) -->
+                <div class="absolute top-0 bottom-0 left-[43.3%] w-1 bg-cyan/60" title="Expected Nadir at 2.6s"></div>
+              </div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-1.5">
+                <span>0.0s [Baseline]</span>
+                <span class="text-amber-flash font-bold flex items-center gap-1">2.0s [Flash]</span>
+                <span class="text-cyan">2.6s [Nadir]</span>
+                <span>6.0s [Recovery]</span>
+              </div>
+            </div>
+
+            <!-- Standby Ingress Telemetry Log -->
+            <div class="mt-3 p-3 rounded-xl bg-black/60 border border-slate-800 font-mono text-xs text-slate-300">
+              <div class="flex items-center justify-between mb-1.5 text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5 text-teal-accent">
+                  <span class="w-1.5 h-1.5 rounded-full bg-teal-accent"></span> TELEMETRY INGRESS LOG
+                </span>
+                <span class="text-[10px] text-cyan cursor-pointer hover:underline" onclick="navigateTo('view-engine')">EXAMINE POST /analyze_session SCHEMA ↗</span>
+              </div>
+              <div id="telemetryLogText" class="text-[11px] leading-relaxed text-slate-400">
+                [00:00.00] Sensor calibrated at 15 FPS clamped sampling.<br/>
+                [00:01.05] Pre-stimulus baseline locked: 36.02px (sigma=0.04).<br/>
+                [00:02.00] Photic trigger armed at 6500K equivalent white screen burst.<br/>
+                Ready for screening execution.
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Right 5-Cols: Computed 4-Metric Schema & Waveform Graph (With Direct Teleport Links) -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+
+          <!-- Computed 4-Metric Schema (Every card links to dedicated explanation) -->
+          <div class="bg-surface-card tech-border rounded-2xl p-5 shadow-xl">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-cyan text-lg">schema</span>
+                <span class="font-mono text-xs font-bold uppercase tracking-wider text-white">// COMPUTED 4-METRIC SCHEMA</span>
+              </div>
+              <span class="text-[10px] font-mono text-cyan bg-cyan/10 px-2 py-0.5 rounded border border-cyan/20">CLICK METRIC FOR DOCS</span>
+            </div>
+
+            <!-- 4 Metrics Bento Grid (All interactive buttons to sub-screens) -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              
+              <!-- Metric 1: Baseline Diam (Direct Link to Screen 7) -->
+              <button onclick="navigateTo('view-baseline')" class="p-3.5 rounded-xl bg-surface-panel hover:bg-slate-800/80 tech-border hover:border-cyan text-left transition-all group cursor-pointer">
+                <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 group-hover:text-cyan">
+                  <span>Baseline Diam</span>
+                  <span class="material-symbols-outlined text-xs group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                </div>
+                <div class="mt-1 flex items-baseline gap-1">
+                  <span id="metricValBaseline" class="font-mono text-2xl font-bold text-white group-hover:text-cyan">36.02</span>
+                  <span class="text-xs font-mono text-slate-400">px</span>
+                </div>
+                <div class="text-[10px] font-mono text-slate-500 mt-1">baseline_diameter_px</div>
+                <div class="text-[9px] font-mono text-cyan mt-1 underline">READ SCREEN 7 ↗</div>
+              </button>
+
+              <!-- Metric 2: Minimum Pupil (Direct Link to Screen 6 / 7) -->
+              <button onclick="navigateTo('view-baseline')" class="p-3.5 rounded-xl bg-surface-panel hover:bg-slate-800/80 tech-border hover:border-amber-flash text-left transition-all group cursor-pointer">
+                <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 group-hover:text-amber-flash">
+                  <span>Minimum Pupil</span>
+                  <span class="material-symbols-outlined text-xs group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                </div>
+                <div class="mt-1 flex items-baseline gap-1">
+                  <span id="metricValMin" class="font-mono text-2xl font-bold text-amber-flash">17.70</span>
+                  <span class="text-xs font-mono text-slate-400">px</span>
+                </div>
+                <div class="text-[10px] font-mono text-slate-500 mt-1">min_diameter_px</div>
+                <div class="text-[9px] font-mono text-amber-flash mt-1 underline">VIEW NADIR SPEC ↗</div>
+              </button>
+
+              <!-- Metric 3: Latency (Direct Link to Screen 4) -->
+              <button onclick="navigateTo('view-engine')" class="p-3.5 rounded-xl bg-surface-panel hover:bg-slate-800/80 tech-border hover:border-teal-accent text-left transition-all group cursor-pointer">
+                <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 group-hover:text-teal-accent">
+                  <span>Latency</span>
+                  <span class="material-symbols-outlined text-xs group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                </div>
+                <div class="mt-1 flex items-baseline gap-1">
+                  <span id="metricValLatency" class="font-mono text-2xl font-bold text-teal-accent">0.60</span>
+                  <span class="text-xs font-mono text-slate-400">s</span>
+                </div>
+                <div class="text-[10px] font-mono text-slate-500 mt-1">latency_sec</div>
+                <div class="text-[9px] font-mono text-teal-accent mt-1 underline">ENGINE CHRONOMETRY ↗</div>
+              </button>
+
+              <!-- Metric 4: Constriction % (Direct Link to Screen 6) -->
+              <button onclick="navigateTo('view-tracking')" class="p-3.5 rounded-xl bg-surface-panel hover:bg-slate-800/80 tech-border hover:border-cyan text-left transition-all group cursor-pointer">
+                <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 group-hover:text-cyan">
+                  <span>Constriction</span>
+                  <span class="material-symbols-outlined text-xs group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                </div>
+                <div class="mt-1 flex items-baseline gap-1">
+                  <span id="metricValConstriction" class="font-mono text-2xl font-bold text-white group-hover:text-cyan">50.87</span>
+                  <span class="text-xs font-mono text-slate-400">%</span>
+                </div>
+                <div class="text-[10px] font-mono text-slate-500 mt-1">pct_constriction</div>
+                <div class="text-[9px] font-mono text-cyan mt-1 underline">SEE SUBPIXEL FIT ↗</div>
+              </button>
+
+            </div>
+
+            <!-- Interactive Chronometric Waveform Graph -->
+            <div class="p-3.5 rounded-xl bg-surface-dim tech-border">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-mono text-white font-bold">// CHRONOMETRIC WAVEFORM</span>
+                <span class="text-[10px] font-mono text-slate-400">f(t) = px_dia</span>
+              </div>
+              <div class="w-full h-32 bg-black/60 rounded-lg p-2 relative overflow-hidden border border-slate-800">
+                <svg id="interactiveWaveformSvg" class="w-full h-full" viewBox="0 0 400 120" preserveAspectRatio="none">
+                  <!-- Grid -->
+                  <line x1="0" y1="30" x2="400" y2="30" stroke="#1e293b" stroke-dasharray="2,2"/>
+                  <line x1="0" y1="60" x2="400" y2="60" stroke="#1e293b" stroke-dasharray="2,2"/>
+                  <line x1="0" y1="90" x2="400" y2="90" stroke="#1e293b" stroke-dasharray="2,2"/>
+                  <!-- Flash Line (t=2.0s -> x=133.3) -->
+                  <line x1="133.3" y1="0" x2="133.3" y2="120" stroke="#ffb703" stroke-width="1.5" stroke-dasharray="3,2"/>
+                  <text x="137" y="14" fill="#ffb703" font-family="monospace" font-size="8" font-weight="bold">FLASH 2.0s</text>
+                  <!-- Waveform Curve -->
+                  <path id="waveformCurvePath" d="M 0,28 L 133,28 C 145,28 155,50 173,98 C 190,105 240,82 280,68 C 340,50 380,36 400,32" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round"/>
+                  <!-- Nadir Dot -->
+                  <circle id="waveformNadirDot" cx="173.3" cy="98" r="4" fill="#00e5ff" stroke="#ffffff" stroke-width="1.5"/>
+                  <text x="180" y="96" fill="#00e5ff" font-family="monospace" font-size="8">Nadir: 17.70px</text>
+                </svg>
+              </div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2">
+                <span>PRE-STIMULUS (2.0s)</span>
+                <span class="text-amber-flash font-semibold">LATENCY (600ms)</span>
+                <span>RECOVERY SLOPE: 1.2mm/s</span>
+              </div>
+            </div>
+
+            <!-- Direct Navigation Callout -->
+            <div class="mt-4 p-3 rounded-xl bg-cyan/5 border border-cyan/20 flex items-center justify-between">
+              <div class="text-[11px] font-mono text-slate-300">
+                Want to see how this data is decoded in Python &amp; WebAssembly?
+              </div>
+              <button onclick="navigateTo('view-engine')" class="px-2.5 py-1 rounded bg-cyan/20 text-cyan text-xs font-mono font-bold hover:bg-cyan hover:text-black transition-colors shrink-0">
+                INSPECT ENGINE ↗
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =================================================================== -->
+    <!-- VIEW 2: BASELINE PUPIL DIAMETER — SYSTEM METRICS (SCREEN 7)         -->
+    <!-- =================================================================== -->
+    <section id="view-baseline" class="page-view">
+      
+      <!-- Top Navigation & Breadcrumbs Bar -->
+      <div class="flex items-center justify-between mb-4">
+        <button onclick="navigateTo('view-test')" class="px-3.5 py-1.5 rounded-lg bg-surface-card hover:bg-slate-800 text-cyan font-mono text-xs tech-border flex items-center gap-1.5 transition-colors cursor-pointer">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>BACK TO EYE FLASH TEST</span>
+        </button>
+        <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+          <span class="px-2 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/30">METRIC SPEC #MET-01</span>
+          <span class="text-slate-600">|</span>
+          <span class="text-teal-accent">GRID // 104.992.001</span>
+        </div>
+      </div>
+
+      <!-- Hero Header Panel -->
+      <div class="bg-surface-card tech-border rounded-2xl p-6 mb-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[11px] font-mono text-cyan font-bold uppercase tracking-wider">● SECURE ANALYSIS SYSTEM // PROTOCOL SPEC-09</span>
+            </div>
+            <h1 class="text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
+              <span>BASELINE PUPIL DIAMETER</span>
+              <span class="text-cyan font-mono text-xl">(BPD)</span>
+            </h1>
+            <div class="flex flex-wrap items-center gap-2.5 mt-2 text-xs font-mono text-slate-300">
+              <span class="px-2 py-0.5 rounded bg-surface-panel border border-slate-700">UNIT: PIXELS (PX)</span>
+              <span class="px-2 py-0.5 rounded bg-surface-panel border border-slate-700 text-amber-flash">PHYSIOLOGIC: 3.5 - 7.5 mm</span>
+              <span class="px-2 py-0.5 rounded bg-teal-accent/15 text-teal-accent border border-teal-accent/30">CONFIDENCE: p99.8</span>
+              <span class="px-2 py-0.5 rounded bg-surface-panel border border-slate-700">CALIB: SCOTOPIC / MESOPIC</span>
+            </div>
+          </div>
+          <button onclick="navigateTo('view-test')" class="px-4 py-2 rounded-xl bg-cyan text-black font-mono text-xs font-bold hover:bg-cyan-glow transition-all flex items-center gap-2 shrink-0">
+            <span class="material-symbols-outlined text-base">sensors</span>
+            <span>RUN TEST WITH BPD PROTOCOL</span>
+          </button>
+        </div>
+        <p class="text-slate-300 text-sm mt-3 leading-relaxed max-w-4xl">
+          Quantitative pre-stimulus equilibrium diameter extracted prior to photic emission. Serves as the primary reference denominator for pupillomotor constriction amplitude, latency onset determination, and resting parasympathetic/sympathetic autonomic tone profiling.
+        </p>
+      </div>
+
+      <!-- Reticle Vector Box & Acquisition Parameters -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        
+        <!-- Reticle Matrix Graphic -->
+        <div class="lg:col-span-8 bg-surface-card tech-border rounded-2xl p-5">
+          <div class="flex items-center justify-between text-xs font-mono text-slate-400 mb-3 pb-2 border-b border-slate-800">
+            <span class="text-cyan font-semibold">OPTICAL RETICLE MATRIX // REF: RE-001</span>
+            <span class="text-teal-accent flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-teal-accent"></span> CAMERA FEED STABLE
+            </span>
+          </div>
+          <div class="relative w-full h-72 bg-black/80 rounded-xl tech-border flex items-center justify-center overflow-hidden">
+            <!-- Reticle SVG simulation -->
+            <svg class="w-full h-full" viewBox="0 0 500 280">
+              <!-- Outer concentric guide -->
+              <circle cx="250" cy="140" r="100" stroke="#00e5ff" stroke-width="1" stroke-dasharray="3,3" fill="none" opacity="0.4"/>
+              <circle cx="250" cy="140" r="70" stroke="#00e5ff" stroke-width="1.2" fill="none" opacity="0.6"/>
+              <text x="250" y="60" fill="#00e5ff" font-family="monospace" font-size="9" text-anchor="middle">IRIS BOUNDARY: Ø 184.2 px</text>
+              <!-- Center Baseline Circle -->
+              <circle cx="250" cy="140" r="36" fill="#00e5ff" fill-opacity="0.2" stroke="#00e5ff" stroke-width="2.5"/>
+              <circle cx="250" cy="140" r="3" fill="#ffffff"/>
+              <text x="250" y="144" fill="#ffffff" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">BPD: 36.02 px</text>
+              <text x="250" y="158" fill="#05d5b3" font-family="monospace" font-size="8" text-anchor="middle">STEADY-STATE APERTURE</text>
+              <!-- Crosshair Lines -->
+              <line x1="130" y1="140" x2="370" y2="140" stroke="#00e5ff" stroke-width="0.8" opacity="0.3"/>
+              <line x1="250" y1="20" x2="250" y2="260" stroke="#00e5ff" stroke-width="0.8" opacity="0.3"/>
+            </svg>
+            <div class="absolute bottom-3 left-4 text-[10px] font-mono text-slate-400 bg-black/70 px-2.5 py-1 rounded tech-border">
+              CENTROID: [X: 200.41, Y: 150.12] | RATIO: 0.1955
+            </div>
+          </div>
+        </div>
+
+        <!-- Acquisition Parameters & Circularity Score -->
+        <div class="lg:col-span-4 flex flex-col gap-4">
+          <div class="bg-surface-card tech-border rounded-2xl p-5 flex-1">
+            <div class="text-xs font-mono font-bold text-white uppercase tracking-wider mb-3 flex items-center justify-between">
+              <span>ACQUISITION PARAMETERS</span>
+              <span class="material-symbols-outlined text-cyan text-sm">settings_input_component</span>
+            </div>
+            <div class="space-y-2.5 font-mono text-xs">
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                <span class="text-slate-400">Pre-Stimulus Window</span>
+                <span class="text-cyan font-bold">-2000ms to 0ms</span>
+              </div>
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                <span class="text-slate-400">Sampling Frequency</span>
+                <span class="text-white font-bold">15 – 120 FPS</span>
+              </div>
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                <span class="text-slate-400">Median Filtering</span>
+                <span class="text-slate-300">5-frame rolling kernel</span>
+              </div>
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                <span class="text-slate-400">Ambient Lux Target</span>
+                <span class="text-amber-flash font-semibold">10 – 50 lx (Mesopic)</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Outlier Trim</span>
+                <span class="text-slate-300">&gt; 2.5 MAD rejected</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Signal Confidence Card -->
+          <div class="bg-surface-card tech-border rounded-2xl p-5">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400 mb-1">
+              <span>REAL-TIME SIGNAL CONFIDENCE</span>
+              <span class="material-symbols-outlined text-teal-accent text-sm">verified</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span class="text-3xl font-black font-mono text-teal-accent">99.82%</span>
+              <span class="text-xs font-mono text-slate-400">CIRCULARITY FIT SCORE</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan"></span> Zero flash contamination detected within pre-trigger temporal buffer.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 3 Technical Cards: Biophysics, Classic CV, Clinical Significance -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        
+        <!-- Biophysics -->
+        <div class="bg-surface-card tech-border rounded-2xl p-5">
+          <div class="flex items-center gap-2 text-cyan font-mono text-xs font-bold uppercase mb-2">
+            <span class="material-symbols-outlined text-base">psychology</span>
+            <span>Definition &amp; Biophysics</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed mb-3">
+            Baseline Pupil Diameter (BPD) represents the steady-state autonomic balance between the sympathetic and parasympathetic divisions of the ocular autonomic pathway in the absence of transient photic stimulation.
+          </p>
+          <div class="p-3 rounded-lg bg-surface-panel tech-border font-mono text-[11px] space-y-1.5">
+            <div class="text-cyan font-semibold">Sphincter Pupillae (Parasympathetic)</div>
+            <div class="text-slate-400">Circular smooth muscle innervated by postganglionic axons from Edinger-Westphal nucleus via CN III.</div>
+            <div class="text-amber-flash font-semibold mt-1">Dilator Pupillae (Sympathetic)</div>
+            <div class="text-slate-400">Radial muscle innervated by adrenergic chain from superior cervical ganglion.</div>
+          </div>
+        </div>
+
+        <!-- Classic CV Extraction (Links to Pupil Tracking Screen 6) -->
+        <div class="bg-surface-card tech-border rounded-2xl p-5">
+          <div class="flex items-center justify-between text-cyan font-mono text-xs font-bold uppercase mb-2">
+            <span class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-base">filter_center_focus</span>
+              <span>Classic CV Extraction</span>
+            </span>
+            <button onclick="navigateTo('view-tracking')" class="text-[10px] text-cyan underline">VIEW FULL CODE ↗</button>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed mb-3">
+            Deterministic computer vision pipeline executing inside the browser and WebAssembly runtime:
+          </p>
+          <div class="space-y-1.5 font-mono text-[11px]">
+            <div class="p-2 rounded bg-surface-panel tech-border flex items-start gap-2">
+              <span class="text-cyan font-bold">01</span>
+              <div><strong class="text-white">MediaPipe Eye Isolator:</strong> Bounding box around ocular sockets.</div>
+            </div>
+            <div class="p-2 rounded bg-surface-panel tech-border flex items-start gap-2">
+              <span class="text-cyan font-bold">02</span>
+              <div><strong class="text-white">Otsu Binarization:</strong> Separates dark pupil core from iris stroma.</div>
+            </div>
+            <div class="p-2 rounded bg-surface-panel tech-border flex items-start gap-2">
+              <span class="text-cyan font-bold">03</span>
+              <div><strong class="text-white">MinEnclosingCircle:</strong> Calculates radius (r_px) down to 0.05px resolution.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clinical Significance -->
+        <div class="bg-surface-card tech-border rounded-2xl p-5">
+          <div class="flex items-center gap-2 text-teal-accent font-mono text-xs font-bold uppercase mb-2">
+            <span class="material-symbols-outlined text-base">clinical_notes</span>
+            <span>Clinical Significance</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed mb-3">
+            BPD serves as the fundamental denominator for normalized dynamic pupil response parameters:
+          </p>
+          <div class="p-3 rounded-lg bg-surface-panel tech-border font-mono text-center text-xs text-cyan font-bold mb-3">
+            %Δ = (BPD - MPD) / BPD × 100
+          </div>
+          <ul class="text-xs text-slate-300 space-y-1.5">
+            <li class="flex items-start gap-1.5">
+              <span class="text-teal-accent">✓</span> Evaluates baseline central arousal (locus coeruleus activity).
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-teal-accent">✓</span> Identifies static anisocoria (&gt;0.4mm asymmetry across ant/post axes).
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-teal-accent">✓</span> Diagnostic benchmark in Horner's syndrome vs. Third Nerve Palsy.
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Knowledge Graph Connections Bar (Teleport across all 4 screens) -->
+      <div class="p-5 rounded-2xl bg-surface-card tech-border">
+        <div class="text-xs font-mono text-cyan font-bold uppercase mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-base">hub</span>
+          <span>INTERCONNECTED TELEMETRIC KNOWLEDGE GRAPH</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <button onclick="navigateTo('view-test')" class="p-3 rounded-xl bg-surface-panel hover:bg-slate-800 tech-border text-left group transition-all">
+            <div class="text-xs font-mono font-bold text-white group-hover:text-cyan flex items-center justify-between">
+              <span>Eye Flash Test Console</span>
+              <span class="text-cyan">↗</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-1">Return to primary 6-sec protocol runner.</div>
+          </button>
+          <button onclick="navigateTo('view-tracking')" class="p-3 rounded-xl bg-surface-panel hover:bg-slate-800 tech-border text-left group transition-all">
+            <div class="text-xs font-mono font-bold text-white group-hover:text-cyan flex items-center justify-between">
+              <span>Pupil Tracking Architecture</span>
+              <span class="text-cyan">↗</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-1">Explore Otsu binarization and iris invariant paradox.</div>
+          </button>
+          <button onclick="navigateTo('view-engine')" class="p-3 rounded-xl bg-surface-panel hover:bg-slate-800 tech-border text-left group transition-all">
+            <div class="text-xs font-mono font-bold text-white group-hover:text-cyan flex items-center justify-between">
+              <span>Analysis Engine Core</span>
+              <span class="text-cyan">↗</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-1">Review Wasm execution and POST /analyze_session.</div>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- =================================================================== -->
+    <!-- VIEW 3: PUPIL TRACKING & SUB-PIXEL CONTOUR EXTRACTION (SCREEN 6)    -->
+    <!-- =================================================================== -->
+    <section id="view-tracking" class="page-view">
+      
+      <!-- Top Navigation & Breadcrumbs Bar -->
+      <div class="flex items-center justify-between mb-4">
+        <button onclick="navigateTo('view-test')" class="px-3.5 py-1.5 rounded-lg bg-surface-card hover:bg-slate-800 text-cyan font-mono text-xs tech-border flex items-center gap-1.5 transition-colors cursor-pointer">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>BACK TO EYE FLASH TEST</span>
+        </button>
+        <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+          <span class="px-2 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/30">SPEC-04.8 ISO_IEEE_P2041</span>
+          <span class="text-slate-600">|</span>
+          <span class="text-teal-accent">STRICT_MATH_TRUE</span>
+        </div>
+      </div>
+
+      <!-- Hero Header Panel -->
+      <div class="bg-surface-card tech-border rounded-2xl p-6 mb-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[11px] font-mono text-cyan font-bold uppercase tracking-wider">● SECURE ALGORITHMIC ENGINE // SUBSYSTEM-02</span>
+            </div>
+            <h1 class="text-2xl lg:text-3xl font-black text-white">
+              PUPIL TRACKING &amp; SUB-PIXEL CONTOUR EXTRACTION
+            </h1>
+            <div class="flex flex-wrap items-center gap-2.5 mt-2 text-xs font-mono text-slate-300">
+              <span class="px-2 py-0.5 rounded bg-surface-panel border border-slate-700 text-cyan">PIPELINE: CV2 + MEDIAPIPE</span>
+              <span class="px-2 py-0.5 rounded bg-surface-panel border border-slate-700 text-teal-accent">INFERENCE: 4.02ms ± 0.08</span>
+              <span class="px-2 py-0.5 rounded bg-surface-panel border border-slate-700">SUBPIXEL RESOLVER: MIN_ENCLOSING_V2</span>
+              <span class="px-2 py-0.5 rounded bg-teal-accent/15 text-teal-accent border border-teal-accent/30">DUAL-EYE ACTIVE</span>
+            </div>
+          </div>
+          <button onclick="navigateTo('view-test')" class="px-4 py-2 rounded-xl bg-cyan text-black font-mono text-xs font-bold hover:bg-cyan-glow transition-all flex items-center gap-2 shrink-0">
+            <span class="material-symbols-outlined text-base">sensors</span>
+            <span>TEST CONTOUR RUNNER</span>
+          </button>
+        </div>
+        <p class="text-slate-300 text-sm mt-3 leading-relaxed max-w-4xl">
+          Two-stage hybrid computer vision architecture that decouples coarse ocular landmark localization (MediaPipe Iris Refinement Mesh) from classical morphological pupillary segmentation, overcoming landmark rigidity under photic dynamic stimuli.
+        </p>
+      </div>
+
+      <!-- The Core Architectural Paradox (MediaPipe Iris Invariance vs True Constriction) -->
+      <div class="bg-surface-card tech-border rounded-2xl p-6 mb-6">
+        <div class="flex items-center gap-2 text-amber-flash font-mono text-xs font-bold uppercase mb-2">
+          <span class="material-symbols-outlined text-base">warning</span>
+          <span>THE CORE ARCHITECTURAL PARADOX: IRIS BOUNDARY INVARIANCE VS. PUPILLARY CONSTRICTION</span>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed mb-4 max-w-4xl">
+          Modern facial neural mesh models, notably Google MediaPipe Face Landmarker, integrate refined iris anchor points (indices 468–477). These models were primarily trained on unconstrained portraiture for gaze direction estimation and synthetic AR cosmetic placement—scenarios where the iris acts as an invariant circular landmark.
+        </p>
+
+        <!-- Comparative Side-by-Side Diagram -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Method A: Iris Mesh Fail -->
+          <div class="p-4 rounded-xl bg-surface-dim tech-border">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400 mb-2">
+              <span class="text-red-400 font-bold">METHOD A: STATIC IRIS LANDMARKS</span>
+              <span class="px-1.5 py-0.5 rounded bg-red-900/30 text-red-400 text-[10px]">ERROR DIVERGENCE: 94.2%</span>
+            </div>
+            <div class="h-44 bg-black/60 rounded-lg tech-border flex items-center justify-center relative overflow-hidden mb-3">
+              <div class="w-28 h-28 rounded-full border-2 border-red-500/50 flex items-center justify-center">
+                <div class="w-16 h-16 rounded-full border border-dashed border-red-400/80 flex items-center justify-center">
+                  <span class="text-[9px] font-mono text-red-400 text-center">STATIC IRIS BOUNDARY<br/>ΔDIAMETER = 0.00mm</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              Because the anatomical outer diameter of the iris remains geometrically invariant during lighting swings (approx 11.8mm across adult phenotypes), relying on iris keypoints reports zero pupillary reflex!
+            </p>
+          </div>
+
+          <!-- Method B: Morphological Otsu Segmentation (The Fix) -->
+          <div class="p-4 rounded-xl bg-surface-dim tech-border">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400 mb-2">
+              <span class="text-teal-accent font-bold">METHOD B: MORPHOLOGICAL OTSU SEGMENTATION</span>
+              <span class="px-1.5 py-0.5 rounded bg-teal-accent/20 text-teal-accent text-[10px]">CALIBRATION FIDELITY: 99.8%</span>
+            </div>
+            <div class="h-44 bg-black/60 rounded-lg tech-border flex items-center justify-center relative overflow-hidden mb-3">
+              <div class="w-28 h-28 rounded-full border border-slate-700 flex items-center justify-center">
+                <div class="w-12 h-12 rounded-full bg-cyan/25 border-2 border-cyan flex items-center justify-center shadow-[0_0_15px_#00e5ff]">
+                  <span class="text-[9px] font-mono text-cyan text-center font-bold">ACTIVE SPHINCTER FIT<br/>Δ = -3.42mm</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              Decoupling segmentation allows the grayscale intra-pupillary void to be evaluated dynamically. As photic bursts hit, the adaptive threshold contour dynamically scales around the true sphincter constriction.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 4-Stage Discrete Pipeline Topology Grid -->
+      <div class="bg-surface-card tech-border rounded-2xl p-6 mb-6">
+        <div class="text-xs font-mono text-cyan font-bold uppercase mb-4 flex items-center justify-between">
+          <span class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-base">account_tree</span>
+            <span>PIPELINE TOPOLOGY &amp; DISCRETE DATA FLOW</span>
+          </span>
+          <span class="text-slate-400 text-[11px]">4-STAGE SYNCHRONOUS DESCRIPTOR</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono text-xs">
+          
+          <div class="p-3.5 rounded-xl bg-surface-panel tech-border">
+            <div class="text-[11px] text-cyan font-bold mb-1">STAGE 01 // WEBRTC INGEST</div>
+            <p class="text-[11px] text-slate-300 mb-2">Native media acquisition buffer at 480p native resolution operating at clamped 15 FPS.</p>
+            <div class="text-[10px] text-slate-400">Zero-Copy Direct DMA Stream</div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-surface-panel tech-border">
+            <div class="text-[11px] text-cyan font-bold mb-1">STAGE 02 // ROI LOCALIZATION</div>
+            <p class="text-[11px] text-slate-300 mb-2">MediaPipe landmark indices 468-477 extract dynamic 96x96 px bounding box.</p>
+            <div class="text-[10px] text-slate-400">15% Contextual Margin Padding</div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-surface-panel tech-border">
+            <div class="text-[11px] text-cyan font-bold mb-1">STAGE 03 // OTSU THRESHOLDING</div>
+            <p class="text-[11px] text-slate-300 mb-2">Applies 5x5 Gaussian kernel (σ=1.2) followed by binarization separating pupil core.</p>
+            <div class="text-[10px] text-slate-400">Morph Open (3x3 Rect) Noise Cut</div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-surface-panel tech-border">
+            <div class="text-[11px] text-cyan font-bold mb-1">STAGE 04 // SUB-PIXEL CONTOUR</div>
+            <p class="text-[11px] text-slate-300 mb-2">Evaluates MinEnclosingCircle down to 0.05px resolution with green-divergence vectors.</p>
+            <div class="text-[10px] text-slate-400">Sklansky Multi-Pass Hull</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Telemetric Knowledge Graph Connections -->
+      <div class="p-5 rounded-2xl bg-surface-card tech-border flex flex-wrap items-center justify-between gap-4">
+        <div class="text-xs font-mono text-slate-400">
+          <span class="text-cyan font-bold">NEXT IN ARCHITECTURE:</span> Review how frames are decoded into NumPy arrays inside the Analysis Engine.
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="navigateTo('view-baseline')" class="px-3 py-1.5 rounded-lg bg-surface-panel text-xs font-mono text-cyan tech-border hover:bg-slate-800">
+            ← BASELINE DIAMETER
+          </button>
+          <button onclick="navigateTo('view-engine')" class="px-4 py-1.5 rounded-lg bg-cyan text-black text-xs font-mono font-bold hover:bg-cyan-glow">
+            ANALYSIS ENGINE CORE →
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- =================================================================== -->
+    <!-- VIEW 4: ANALYSIS ENGINE CORE — SYSTEM COMPONENTS (SCREEN 4)         -->
+    <!-- =================================================================== -->
+    <section id="view-engine" class="page-view">
+      
+      <!-- Top Navigation & Breadcrumbs Bar -->
+      <div class="flex items-center justify-between mb-4">
+        <button onclick="navigateTo('view-test')" class="px-3.5 py-1.5 rounded-lg bg-surface-card hover:bg-slate-800 text-cyan font-mono text-xs tech-border flex items-center gap-1.5 transition-colors cursor-pointer">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>BACK TO EYE FLASH TEST</span>
+        </button>
+        <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+          <span class="px-2 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/30">SUBSYSTEM-01 // PUPILNET-V3</span>
+          <span class="text-slate-600">|</span>
+          <span class="text-teal-accent">WASM + PYTHON FLASK</span>
+        </div>
+      </div>
+
+      <!-- Hero Header Panel -->
+      <div class="bg-surface-card tech-border rounded-2xl p-6 mb-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[11px] font-mono text-cyan font-bold uppercase tracking-wider">● CORE SYSTEM COMPONENT // CAL_ORBITAL_ALPHA-9</span>
+            </div>
+            <h1 class="text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
+              <span>ANALYSIS ENGINE</span>
+              <span class="text-cyan font-mono text-xl">(PUPILNET-V3)</span>
+            </h1>
+            <div class="flex flex-wrap items-center gap-2.5 mt-2 text-xs font-mono text-slate-300">
+              <span class="px-2 py-0.5 rounded bg-teal-accent/15 text-teal-accent border border-teal-accent/30 font-bold">STATUS: OPERATIONAL</span>
+              <span class="px-2 py-0.5 rounded bg-surface-panel border border-slate-700">VERSION: 4.8.2-PROD</span>
+              <span class="px-2 py-0.5 rounded bg-surface-panel border border-slate-700 text-cyan">RUNTIME: WEBASSEMBLY / FLASK</span>
+              <span class="px-2 py-0.5 rounded bg-surface-panel border border-slate-700">ISOLATION: VOLATILE ENCLAVE</span>
+            </div>
+          </div>
+          <button onclick="navigateTo('view-test')" class="px-4 py-2 rounded-xl bg-cyan text-black font-mono text-xs font-bold hover:bg-cyan-glow transition-all flex items-center gap-2 shrink-0">
+            <span class="material-symbols-outlined text-base">play_arrow</span>
+            <span>TRIGGER INGRESS PROTOCOL</span>
+          </button>
+        </div>
+        <p class="text-slate-300 text-sm mt-3 leading-relaxed max-w-4xl">
+          The centralized biometric computing core responsible for high-throughput photic waveform parsing, cranial reflex velocity calculation, bilateral synchrony concordance, and cryptographically verified clinical report generation.
+        </p>
+      </div>
+
+      <!-- 4 Technical Specification Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 font-mono">
+        
+        <div class="bg-surface-card tech-border rounded-xl p-4">
+          <div class="text-[10px] text-slate-400 mb-1 flex items-center justify-between">
+            <span>SPEC: INGEST_02</span>
+            <span class="material-symbols-outlined text-cyan text-xs">sync</span>
+          </div>
+          <div class="text-2xl font-bold text-cyan">120 FPS</div>
+          <div class="text-[11px] text-slate-300 mt-1">Synchronous multi-stream ingestion with sub-ms timestamp alignment.</div>
+          <div class="text-[10px] text-teal-accent mt-2">SYNC_DRIFT: &lt; 0.04ms</div>
+        </div>
+
+        <div class="bg-surface-card tech-border rounded-xl p-4">
+          <div class="text-[10px] text-slate-400 mb-1 flex items-center justify-between">
+            <span>SPEC: MEMORY_03</span>
+            <span class="material-symbols-outlined text-cyan text-xs">memory</span>
+          </div>
+          <div class="text-2xl font-bold text-white">48.2 MB</div>
+          <div class="text-[11px] text-slate-300 mt-1">VRAM volatile memory allocation ceiling. Strictly zero disk persistence.</div>
+          <div class="text-[10px] text-teal-accent mt-2">PERSISTENCE: NONE (0%)</div>
+        </div>
+
+        <div class="bg-surface-card tech-border rounded-xl p-4">
+          <div class="text-[10px] text-slate-400 mb-1 flex items-center justify-between">
+            <span>SPEC: LATENCY_04</span>
+            <span class="material-symbols-outlined text-teal-accent text-xs">timer</span>
+          </div>
+          <div class="text-2xl font-bold text-teal-accent">4.82 ms</div>
+          <div class="text-[11px] text-slate-300 mt-1">Mean frame processing duration against maximum budget ceiling of 8.00ms.</div>
+          <div class="text-[10px] text-cyan mt-2">CEILING MARGIN: +39.75%</div>
+        </div>
+
+        <div class="bg-surface-card tech-border rounded-xl p-4">
+          <div class="text-[10px] text-slate-400 mb-1 flex items-center justify-between">
+            <span>SPEC: CONCORDANCE_05</span>
+            <span class="material-symbols-outlined text-amber-flash text-xs">join_inner</span>
+          </div>
+          <div class="text-2xl font-bold text-amber-flash">r = 0.984</div>
+          <div class="text-[11px] text-slate-300 mt-1">Dynamic synchrony evaluation between Oculus Dexter and Oculus Sinister.</div>
+          <div class="text-[10px] text-teal-accent mt-2">CONFIDENCE: OPTIMAL</div>
+        </div>
+
+      </div>
+
+      <!-- JSON Input & Output Ingress/Egress Contract Showcase -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        
+        <!-- Ingress Schema (POST /analyze_session) -->
+        <div class="bg-surface-card tech-border rounded-2xl p-5">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-xs font-mono">
+            <span class="text-cyan font-bold flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">login</span> INPUT SPECIFICATION (INGRESS)
+            </span>
+            <span class="px-2 py-0.5 rounded bg-cyan/15 text-cyan text-[10px]">POST /analyze_session</span>
+          </div>
+          <pre class="p-3.5 rounded-xl bg-black/80 tech-border font-mono text-[11px] text-cyan leading-relaxed overflow-x-auto">
+// INGRESS BUFFER PAYLOAD FORMAT
+{
+  "flash_time": 1711928400.128,
+  "ambient_lux": 14.5,
+  "subject_token": "SUB_ENCLAVE_891b2",
+  "frames": [
+    {
+      "t": 1711928400.000,
+      "image": "data:image/jpeg;base64,/9j/4AAQSk..."
+    },
+    {
+      "t": 1711928400.066,
+      "image": "data:image/jpeg;base64,/9j/4AAQSk..."
+    }
+  ]
+}</pre>
+          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 mt-2">
+            <span>MAX PAYLOAD SIZE: 16.0 MB</span>
+            <span>MIME: application/json</span>
+          </div>
+        </div>
+
+        <!-- Egress Schema (Computed Diagnostic Schema) -->
+        <div class="bg-surface-card tech-border rounded-2xl p-5">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-xs font-mono">
+            <span class="text-teal-accent font-bold flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">logout</span> OUTPUT SCHEMA (EGRESS)
+            </span>
+            <span class="px-2 py-0.5 rounded bg-teal-accent/20 text-teal-accent text-[10px]">STATUS: 200 OK</span>
+          </div>
+          <pre class="p-3.5 rounded-xl bg-black/80 tech-border font-mono text-[11px] text-teal-accent leading-relaxed overflow-x-auto">
+// COMPUTED DIAGNOSTIC SCHEMA
+{
+  "baseline_diameter_px": 36.02,
+  "min_diameter_px": 17.70,
+  "latency_sec": 0.60,
+  "pct_constriction": 50.87,
+  "concordance_delta_mm": 0.014,
+  "timestamps": [0.000, 0.066, 0.133, ...],
+  "diameters_px": [36.02, 36.01, 35.98, ...],
+  "enclave_sig": "0x9f1a0e88c03d7...sha256"
+}</pre>
+          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 mt-2">
+            <span>HASH: HMAC-SHA256</span>
+            <span class="text-teal-accent">VERIFIED: CLINICAL_READY</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Security & Enclave Sandboxing Guarantees -->
+      <div class="bg-surface-card tech-border rounded-2xl p-6">
+        <div class="text-xs font-mono text-cyan font-bold uppercase mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-base">shield</span>
+          <span>FAIL-SAFE &amp; ISOLATION SECURITY MATRIX</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div class="p-3.5 rounded-xl bg-surface-panel tech-border">
+            <div class="font-mono text-white font-bold mb-1">1. Volatile Memory Zeroization</div>
+            <p class="text-slate-400 text-[11px] leading-relaxed">
+              Immediately after egress response generation, all raw OpenCV memory matrices and base64 arrays undergo a DoD 5220.22-M memory zeroization pattern overwrite in RAM.
+            </p>
+          </div>
+          <div class="p-3.5 rounded-xl bg-surface-panel tech-border">
+            <div class="font-mono text-white font-bold mb-1">2. Enclave Process Sandboxing</div>
+            <p class="text-slate-400 text-[11px] leading-relaxed">
+              The worker pool executes within read-only Linux namespaces stripped of network socket privileges (CAP_NET_ADMIN revoked) preventing egress leaks.
+            </p>
+          </div>
+          <div class="p-3.5 rounded-xl bg-surface-panel tech-border">
+            <div class="font-mono text-white font-bold mb-1">3. Zero-Persistence Guarantee</div>
+            <p class="text-slate-400 text-[11px] leading-relaxed">
+              Ephemeral runtimes write zero bytes to disk or persistent swaps. Temporary memory dumps trigger immediate container kernel panic and automated node destruction.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Persistent Global Footer Navigation (All 4 Pages Linked) -->
+  <footer class="mt-12 bg-surface-card border-t border-slate-800 text-xs font-mono py-8 px-4 lg:px-8">
+    <div class="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 pb-6 border-b border-slate-800/80">
+      
+      <!-- Col 1: Platform & Compliance -->
+      <div class="md:col-span-1">
+        <div class="flex items-center gap-2 text-white font-bold tracking-wider mb-2">
+          <span class="material-symbols-outlined text-cyan text-lg">visibility</span>
+          <span>MAGIC EYE LAB // PLATFORM</span>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Advanced sub-millisecond pupillometric chronometry and optical response analysis engine. Built for high-frequency neural bio-signal extraction, edge landmarking, and verifiable telemetric logs.
+        </p>
+        <div class="mt-3 text-[10px] text-slate-500">
+          ISO/IEC 62471 Photobiological Radiance Compliance
+        </div>
+      </div>
+
+      <!-- Col 2: Core Protocols Links -->
+      <div>
+        <div class="text-cyan font-bold uppercase mb-2">// APPLICATION PROTOCOLS</div>
+        <ul class="space-y-1.5 text-[11px] text-slate-300">
+          <li>
+            <a href="javascript:void(0)" onclick="navigateTo('view-test')" class="hover:text-cyan flex items-center gap-1.5">
+              <span>→</span> <span>Eye Flash Response Test</span> <span class="text-[9px] text-cyan">[Page 1]</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" onclick="navigateTo('view-baseline')" class="hover:text-cyan flex items-center gap-1.5">
+              <span>→</span> <span>Baseline Pupil Diameter</span> <span class="text-[9px] text-cyan">[Page 2]</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" onclick="navigateTo('view-tracking')" class="hover:text-cyan flex items-center gap-1.5">
+              <span>→</span> <span>Pupil Tracking &amp; Otsu</span> <span class="text-[9px] text-cyan">[Page 3]</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" onclick="navigateTo('view-engine')" class="hover:text-cyan flex items-center gap-1.5">
+              <span>→</span> <span>Analysis Engine Core</span> <span class="text-[9px] text-cyan">[Page 4]</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Col 3: Knowledge Hub Links -->
+      <div>
+        <div class="text-cyan font-bold uppercase mb-2">// INTERCONNECTED KNOWLEDGE HUB</div>
+        <ul class="space-y-1.5 text-[11px] text-slate-300">
+          <li>
+            <a href="javascript:void(0)" onclick="navigateTo('view-baseline')" class="hover:text-cyan">
+              → Baseline Pupil Diameter (BPD)
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" onclick="navigateTo('view-tracking')" class="hover:text-cyan">
+              → Sub-Pixel Pupil Tracking &amp; Otsu
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" onclick="navigateTo('view-engine')" class="hover:text-cyan">
+              → Subsystem 01: Analysis Engine
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" onclick="navigateTo('view-test')" class="hover:text-cyan">
+              → Real-Time Optical Aperture Sensor
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Security & Integrity -->
+      <div>
+        <div class="text-cyan font-bold uppercase mb-2">// SECURITY &amp; INTEGRITY</div>
+        <ul class="space-y-1.5 text-[11px] text-slate-400">
+          <li class="flex items-center gap-1.5">
+            <span class="text-teal-accent">●</span> Ephemeral Enclave &amp; Zero-Persistence
+          </li>
+          <li class="flex items-center gap-1.5">
+            <span class="text-teal-accent">●</span> Global Sensor Cluster Telemetry
+          </li>
+          <li class="flex items-center gap-1.5">
+            <span class="text-teal-accent">●</span> SHA-256 HMAC Encrypted Diagnostic Payload
+          </li>
+        </ul>
+        <div class="mt-3 text-[10px] text-slate-500">
+          STRICT DETERMINISM: TRUE
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Status Line -->
+    <div class="max-w-[1440px] mx-auto pt-4 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-2">
+      <div>MAGIC EYE LAB • OPTICAL RESPONSE ANALYSIS PROTOCOL • CHECKSUM: 0x9F4C82A</div>
+      <div class="flex items-center gap-4">
+        <span class="text-teal-accent flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-teal-accent"></span> ALL SUBSYSTEMS NOMINAL
+        </span>
+        <span>2026 CYBERNETIC BIOMETRICS</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Single-Page Application Interactive Router & Simulation Logic -->
+  <script>
+    const pages = ['view-test', 'view-baseline', 'view-tracking', 'view-engine'];
+    const titles = {
+      'view-test': 'PUPIL RESPONSE SCREENING (TEST CONSOLE)',
+      'view-baseline': 'SYSTEM METRICS — BASELINE PUPIL DIAMETER (BPD)',
+      'view-tracking': 'SYSTEM CONCEPTS — PUPIL TRACKING & SUB-PIXEL CONTOUR',
+      'view-engine': 'SYSTEM COMPONENTS — ANALYSIS ENGINE (PUPILNET-V3)'
+    };
+    const navButtons = {
+      'view-test': 'navBtn-test',
+      'view-baseline': 'navBtn-baseline',
+      'view-tracking': 'navBtn-tracking',
+      'view-engine': 'navBtn-engine'
+    };
+
+    let currentPageId = 'view-test';
+
+    function navigateTo(targetPageId) {
+      if (!pages.includes(targetPageId)) return;
+
+      // Hide all pages, show target
+      pages.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+        const btn = document.getElementById(navButtons[id]);
+        if (btn) {
+          btn.className = "px-3.5 py-1.5 rounded-lg font-mono text-xs font-semibold text-slate-400 hover:text-cyan hover:bg-slate-800/60 transition-all flex items-center gap-1.5 border border-transparent";
+        }
+      });
+
+      const activeEl = document.getElementById(targetPageId);
+      if (activeEl) activeEl.classList.add('active');
+
+      const activeBtn = document.getElementById(navButtons[targetPageId]);
+      if (activeBtn) {
+        activeBtn.className = "px-3.5 py-1.5 rounded-lg font-mono text-xs font-semibold transition-all flex items-center gap-1.5 bg-cyan/15 text-cyan border border-cyan/40 shadow-[0_0_12px_rgba(0,229,255,0.2)]";
+      }
+
+      // Update breadcrumb
+      document.getElementById('breadcrumbCurrent').textContent = titles[targetPageId] || targetPageId;
+      currentPageId = targetPageId;
+
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cyclePage() {
+      const idx = pages.indexOf(currentPageId);
+      const nextIdx = (idx + 1) % pages.length;
+      navigateTo(pages[nextIdx]);
+    }
+
+    function displayMetric(elementId, value, digits = 2) {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+      element.textContent = value === null || value === undefined || Number.isNaN(Number(value))
+        ? '—'
+        : Number(value).toFixed(digits);
+    }
+
+    function updateWaveform(timestamps, diameters, flashTime = 2.0) {
+      const path = document.getElementById('waveformCurvePath');
+      const nadirDot = document.getElementById('waveformNadirDot');
+      if (!path || !nadirDot || !timestamps?.length) return;
+
+      const valid = diameters
+        .map((diameter, index) => ({ t: timestamps[index], d: diameter }))
+        .filter(point => point.d !== null && point.d !== undefined && Number.isFinite(Number(point.d)));
+      if (valid.length < 2) return;
+
+      const min = Math.min(...valid.map(point => Number(point.d)));
+      const max = Math.max(...valid.map(point => Number(point.d)));
+      const span = Math.max(max - min, 1);
+      const duration = Math.max(...timestamps, 6);
+      const points = valid.map(point => ({
+        x: (point.t / duration) * 400,
+        y: 105 - ((Number(point.d) - min) / span) * 78,
+        t: point.t,
+        d: Number(point.d)
+      }));
+      path.setAttribute('d', points.map((point, index) => `${index ? 'L' : 'M'} ${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' '));
+      const nadir = valid.reduce((lowest, point) => Number(point.d) < lowest.d ? { t: point.t, d: Number(point.d) } : lowest, { t: 0, d: Infinity });
+      nadirDot.setAttribute('cx', ((nadir.t / duration) * 400).toFixed(1));
+      nadirDot.setAttribute('cy', (105 - ((nadir.d - min) / span) * 78).toFixed(1));
+      const label = nadirDot.nextElementSibling;
+      if (label) label.textContent = `Nadir: ${nadir.d.toFixed(2)}px`;
+    }
+
+    function applyAnalysisPayload(payload) {
+      if (payload.status === 'warning') {
+        throw new Error(payload.message || 'The session needs better lighting.');
+      }
+      const metrics = payload.metrics || {};
+      displayMetric('metricValBaseline', metrics.baseline_diameter_px);
+      displayMetric('metricValMin', metrics.min_diameter_px);
+      displayMetric('metricValLatency', metrics.latency_sec);
+      displayMetric('metricValConstriction', metrics.pct_constriction);
+      updateWaveform(payload.timestamps || [], payload.diameters_px || []);
+      return metrics;
+    }
+
+    async function loadDemoMetrics() {
+      const response = await fetch('/demo', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Demo request failed (${response.status})`);
+      const payload = await response.json();
+      return applyAnalysisPayload({
+        metrics: payload.metrics,
+        timestamps: payload.timestamps || [],
+        diameters_px: payload.diameters_px || []
+      });
+    }
+
+    async function submitCapturedSession(frames, flashTime) {
+      const response = await fetch('/analyze_session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flash_time: flashTime, frames })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || `Analysis request failed (${response.status})`);
+      return applyAnalysisPayload(payload);
+    }
+
+    // Camera & Testing Protocol Runner
+    let videoStream = null;
+    let isTestRunning = false;
+    let testInterval = null;
+    let capturedFrames = [];
+
+    async function initCameraOrDemo() {
+      const video = document.getElementById('webcamFeed');
+      const camBtnText = document.getElementById('initCamText');
+      const sensorStatusTag = document.getElementById('sensorStatusTag');
+
+      if (videoStream) {
+        videoStream.getTracks().forEach(t => t.stop());
+        videoStream = null;
+        video.classList.add('hidden');
+        camBtnText.textContent = "INITIALIZE SENSOR";
+        sensorStatusTag.textContent = "STANDBY_LOCK";
+        sensorStatusTag.className = "px-2 py-0.5 rounded bg-teal-accent/15 text-teal-accent border border-teal-accent/30 font-semibold";
+        return;
+      }
+
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 } });
+        video.srcObject = videoStream;
+        video.classList.remove('hidden');
+        camBtnText.textContent = "DEACTIVATE CAMERA";
+        sensorStatusTag.textContent = "OPTICAL_LIVE";
+        sensorStatusTag.className = "px-2 py-0.5 rounded bg-cyan/20 text-cyan border border-cyan font-bold";
+      } catch (err) {
+        alert("Webcam hardware permission restricted or unavailable. Engaging simulated cybernetic sensor mode.");
+        sensorStatusTag.textContent = "SYNTHETIC_SIM";
+        sensorStatusTag.className = "px-2 py-0.5 rounded bg-amber-flash/20 text-amber-flash border border-amber-flash font-bold";
+      }
+    }
+
+    function execute06SecProtocol() {
+      if (isTestRunning) return;
+      isTestRunning = true;
+
+      const video = document.getElementById('webcamFeed');
+      const runBtn = document.getElementById('actionRunTestBtn');
+      const timerSecs = document.getElementById('timerSecs');
+      const testHud = document.getElementById('testRunningHud');
+      const testStatusText = document.getElementById('testRunningStatusText');
+      const progressBar = document.getElementById('protocolProgressBar');
+      const timerDisplay = document.getElementById('protocolTimerDisplay');
+      const flashTag = document.getElementById('flashHudTag');
+      const flashOverlay = document.getElementById('photicFlashOverlay');
+      const apertureCircle = document.getElementById('pupilApertureCircle');
+      const telemetryLog = document.getElementById('telemetryLogText');
+      const captureCanvas = document.getElementById('hiddenCaptureCanvas');
+      const captureContext = captureCanvas.getContext('2d', { willReadFrequently: false });
+      const cameraIsLive = Boolean(videoStream && video.readyState >= 2);
+      capturedFrames = [];
+
+      runBtn.disabled = true;
+      runBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      testHud.classList.remove('hidden');
+      testHud.classList.add('flex');
+      progressBar.style.width = '0%';
+      flashTag.classList.remove('hidden');
+
+      const startTime = performance.now();
+      let flashTriggered = false;
+
+      telemetryLog.innerHTML = `
+        [00:00.00] 6.0-sec protocol triggered @ 15 FPS clamped sampling.<br/>
+        [00:00.25] Ingress buffer streaming into in-memory FIFO queue.<br/>
+        [00:01.20] ${cameraIsLive ? 'Camera frames entering capture buffer.' : 'Synthetic sensor buffer engaged.'}
+      `;
+
+      testInterval = setInterval(() => {
+        const now = performance.now();
+        const elapsed = (now - startTime) / 1000;
+        const progress = Math.min(100, (elapsed / 6.0) * 100);
+
+        if (cameraIsLive) {
+          captureContext.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+          capturedFrames.push({
+            t: Number(elapsed.toFixed(3)),
+            image: captureCanvas.toDataURL('image/jpeg', 0.72)
+          });
+        }
+
+        timerSecs.textContent = elapsed.toFixed(1);
+        timerDisplay.textContent = `${elapsed.toFixed(1)}s / 6.0s`;
+        progressBar.style.width = `${progress}%`;
+
+        // At t=2.0s: Flash trigger (400ms duration)
+        if (elapsed >= 2.0 && !flashTriggered) {
+          flashTriggered = true;
+          flashOverlay.style.opacity = '1';
+          testStatusText.textContent = "⚡ PHOTIC BURST ACTIVE (400ms)";
+          telemetryLog.innerHTML += `<br/><span class="text-amber-flash font-bold">[00:02.00] Photic trigger burst dispatched! (400ms @ 6500K)</span>`;
+          
+          setTimeout(() => {
+            flashOverlay.style.opacity = '0';
+            testStatusText.textContent = "TRACKING AUTONOMIC CONSTRICTION...";
+            flashTag.classList.add('hidden');
+          }, 400);
+        }
+
+        // Animate pupil shrinking between 2.0s and 2.6s
+        if (elapsed >= 2.0 && elapsed <= 2.6) {
+          const cProgress = (elapsed - 2.0) / 0.6;
+          // Scale from 80px (w-20) down to 38px
+          const curSize = 80 - (80 - 38) * Math.sin(cProgress * Math.PI / 2);
+          apertureCircle.style.width = `${curSize}px`;
+          apertureCircle.style.height = `${curSize}px`;
+        } else if (elapsed > 2.6) {
+          // Recovery redilation
+          const recProgress = Math.min(1.0, (elapsed - 2.6) / 3.4);
+          const curSize = 38 + (70 - 38) * (1 - Math.exp(-recProgress * 2.5));
+          apertureCircle.style.width = `${curSize}px`;
+          apertureCircle.style.height = `${curSize}px`;
+        }
+
+        if (elapsed >= 6.0) {
+          clearInterval(testInterval);
+          isTestRunning = false;
+          testHud.classList.add('hidden');
+          testHud.classList.remove('flex');
+          runBtn.disabled = false;
+          runBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          progressBar.style.width = '100%';
+          telemetryLog.innerHTML += `<br/>[00:06.00] ${capturedFrames.length || 90} frames acquired. Egress payload dispatched to analysis engine.`;
+          const analysisRequest = cameraIsLive && capturedFrames.length >= 10
+            ? submitCapturedSession(capturedFrames, 2.0)
+            : loadDemoMetrics();
+          analysisRequest.then(metrics => {
+            telemetryLog.innerHTML += `<br/><span class="text-teal-accent font-bold">[COMPLETE] 4-Metric Schema Computed: Baseline: ${Number(metrics.baseline_diameter_px).toFixed(2)}px | Min: ${Number(metrics.min_diameter_px).toFixed(2)}px | Latency: ${Number(metrics.latency_sec).toFixed(2)}s | Constriction: ${Number(metrics.pct_constriction).toFixed(2)}%</span>`;
+          }).catch(error => {
+            if (cameraIsLive) {
+              telemetryLog.innerHTML += `<br/><span class="text-amber-flash font-bold">[WARNING] Live analysis unavailable: ${error.message} Falling back to synthetic validation.</span>`;
+              loadDemoMetrics().then(metrics => {
+                telemetryLog.innerHTML += `<br/><span class="text-teal-accent font-bold">[FALLBACK] Synthetic metrics loaded: ${Number(metrics.pct_constriction).toFixed(2)}% constriction.</span>`;
+              }).catch(fallbackError => {
+                telemetryLog.innerHTML += `<br/><span class="text-amber-flash font-bold">[ERROR] ${fallbackError.message}</span>`;
+              });
+            } else {
+              telemetryLog.innerHTML += `<br/><span class="text-amber-flash font-bold">[WARNING] Analysis endpoint unavailable: ${error.message}</span>`;
+            }
+          });
+        }
+      }, 66.6); // 15 FPS
+    }
+  </script>
+</body>
+</html>

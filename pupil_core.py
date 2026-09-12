@@ -249,7 +249,7 @@ def analyze_frame_bgr(frame_bgr, face_mesh):
         d_l = find_pupil_diameter(cv2.cvtColor(roi_l, cv2.COLOR_BGR2GRAY)) if roi_l.size > 0 else None
 
         if d_l is not None and d_r is not None:
-            d_final = (d_left + d_right) / 2.0
+            d_final = (d_l + d_r) / 2.0
         else:
             d_final = d_l if d_l is not None else d_r
         print(f"[PLR DIAG] Fallback 468 lms: Left={d_l}, Right={d_r} -> {d_final}", file=sys.stderr, flush=True)

@@ -238,6 +238,19 @@
           </p>
         </div>
       </div>
+
+      <!-- Prominent plain-language clinical assessment -->
+      <section id="clinicalAssessmentCard" class="bg-surface-card tech-border rounded-2xl p-5 mb-6 border-l-4 border-cyan shadow-xl" aria-live="polite">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-cyan">clinical_notes</span>
+            <h2 class="text-base font-bold text-white">Clinical Assessment</h2>
+          </div>
+          <span id="clinicalAssessmentFinding" class="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-600">NOT YET RUN</span>
+        </div>
+        <p id="clinicalAssessmentText" class="text-lg font-semibold text-slate-200 leading-relaxed">Run the flash test to see the optical screening assessment here.</p>
+        <p class="text-[11px] text-slate-400 mt-2">This is a screening signal, not a diagnosis. Seek medical care for urgent or concerning symptoms.</p>
+      </section>
       <!-- Main Two-Column Testing Console -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
@@ -1259,8 +1272,10 @@
 
     function applyAnalysisPayload(payload) {
       if (payload.status === 'warning') {
+        updateClinicalAssessment('warning', payload.message || 'Lighting is not suitable for a reliable optical assessment.');
         throw new Error(payload.message || 'The session needs better lighting.');
       }
+      updateClinicalAssessment(payload.finding || 'completed', payload.assessment || 'Optical screening completed.');
       try {
         const shared = JSON.parse(localStorage.getItem('neuroscreen.latestResults') || '{}');
         shared.session_id = shared.session_id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -1276,6 +1291,21 @@
       displayMetric('metricValConstriction', metrics.pct_constriction);
       updateWaveform(payload.timestamps || [], payload.diameters_px || []);
       return metrics;
+    }
+
+    function updateClinicalAssessment(finding, assessment) {
+      const card = document.getElementById('clinicalAssessmentCard');
+      const findingEl = document.getElementById('clinicalAssessmentFinding');
+      const textEl = document.getElementById('clinicalAssessmentText');
+      if (!card || !findingEl || !textEl) return;
+
+      findingEl.textContent = String(finding || 'completed').replaceAll('_', ' ').toUpperCase();
+      textEl.textContent = assessment || 'Optical screening completed.';
+      const isNormal = finding === 'normal';
+      const isWarning = finding === 'warning' || finding === 'inconclusive';
+      card.className = `bg-surface-card tech-border rounded-2xl p-5 mb-6 border-l-4 shadow-xl ${isNormal ? 'border-teal-accent' : isWarning ? 'border-amber-flash' : 'border-red-500'}`;
+      findingEl.className = `text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${isNormal ? 'bg-teal-accent/15 text-teal-accent border-teal-accent/40' : isWarning ? 'bg-amber-flash/15 text-amber-flash border-amber-flash/40' : 'bg-red-500/15 text-red-300 border-red-500/40'}`;
+      textEl.className = `text-lg font-semibold leading-relaxed ${isNormal ? 'text-teal-accent' : isWarning ? 'text-amber-flash' : 'text-red-300'}`;
     }
 
     async function loadDemoMetrics() {
@@ -1299,7 +1329,10 @@
         body: JSON.stringify({ flash_time: flashTime, frames })
       });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || `Analysis request failed (${response.status})`);
+      if (!response.ok) {
+        updateClinicalAssessment(payload.finding || 'inconclusive', payload.assessment || payload.error || `Analysis request failed (${response.status})`);
+        throw new Error(payload.assessment || payload.error || `Analysis request failed (${response.status})`);
+      }
       return applyAnalysisPayload(payload);
     }
 
